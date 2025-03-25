@@ -156,4 +156,15 @@ class Workflow:
             self.store[row["link"]] = record
         print(f"Updated {len(state_store_df)} records.")
     
-    
+    def export(self) -> pd.DataFrame:
+        """Export links and unnested outputs."""
+        raw_df = self.get_analyses()
+        pretty_df = pd.DataFrame()
+        
+        # Add link column
+        pretty_df["link"] = raw_df["link"]
+        
+        # output column contains dictionary or None. Unnest it
+        unnested = pd.json_normalize(raw_df["output"])
+        pretty_df = pd.concat([pretty_df, unnested], axis=1)
+        return pretty_df
