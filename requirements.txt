@@ -1,0 +1,8 @@
+requests
+openai==1.68.2
+pydantic==2.10.6
+pandas==2.2.3
+tqdm
+bs4==0.0.2
+newspaper3k==0.2.8
+lxml[html_clean]

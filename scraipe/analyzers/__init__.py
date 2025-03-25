@@ -1,0 +1,1 @@
+from scraipe.analyzers.openai_analyzer import OpenAiAnalyzer
