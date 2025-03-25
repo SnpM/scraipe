@@ -1,1 +1,2 @@
 from scraipe.analyzers.openai_analyzer import OpenAiAnalyzer
+from scraipe.analyzers.text_stats_analyzer import TextStatsAnalyzer
