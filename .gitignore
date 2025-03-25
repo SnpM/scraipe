@@ -175,3 +175,4 @@ cython_debug/
 
 
 celebrities.csv
+.openai_key
