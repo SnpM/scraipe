@@ -18,13 +18,13 @@ class NewsScraper(IScraper):
                     link=url,
                     content=None,
                     success=False, 
-                    error=f"Failed to scrape {url}. Status code: {response.status_code}")
+                    scrape_error=f"Failed to scrape {url}. Status code: {response.status_code}")
             text = response.text
             article.set_html(text)
             article.parse()
             content = article.text
             if not content:
-                return ScrapeResult(link=url, success=False, error=f"Failed to news from {url}. No content found.")
+                return ScrapeResult(link=url, success=False, scrape_error=f"Failed to news from {url}. No content found.")
             return ScrapeResult(link=url, content=content, success=True)
         except Exception as e:
-            return ScrapeResult(link=url,success=False, error=f"Failed to scrape {url}. Error: {e}")
+            return ScrapeResult(link=url,success=False, scrape_error=f"Failed to scrape {url}. Error: {e}")

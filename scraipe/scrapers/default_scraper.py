@@ -16,7 +16,7 @@ class DefaultScraper(IScraper):
                     link=url,
                     content=None,
                     success=False, 
-                    error=f"Failed to scrape {url}. Status code: {response.status_code}")
+                    scrape_error=f"Failed to scrape {url}. Status code: {response.status_code}")
             text = response.text
             # Use bs4 to extract the text from the html
             soup = BeautifulSoup(text, "html.parser")
@@ -26,4 +26,4 @@ class DefaultScraper(IScraper):
             
             return ScrapeResult(link=url, content=content, success=True)
         except Exception as e:
-            return ScrapeResult(link=url,success=False, error=f"Failed to scrape {url}. Error: {e}")
+            return ScrapeResult(link=url,success=False, scrape_error=f"Failed to scrape {url}. Error: {e}")

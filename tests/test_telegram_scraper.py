@@ -49,7 +49,7 @@ def test_live_scrape_invalid_url(live_scraper):
     result = live_scraper.scrape(url)
     assert isinstance(result, ScrapeResult)
     assert not result.success
-    assert "not a telegram link" in result.error
+    assert "not a telegram link" in result.scrape_error
 
 def test_live_scrape_nonexistent_message(live_scraper):
     if live_scraper is None:
@@ -76,7 +76,7 @@ def test_mock_scrape_restricted_entity(mock_scraper):
     result = mock_scraper.scrape(url)
     assert isinstance(result, ScrapeResult)
     assert not result.success
-    assert "restricted" in result.error
+    assert "restricted" in result.scrape_error
 
 def test_mock_scrape_nonexistent_message(mock_scraper):
     mock_scraper.client.get_entity.return_value = MagicMock(restricted=False)

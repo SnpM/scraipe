@@ -24,7 +24,7 @@ def test_scrape_success(mock_get):
 
     scraper = DefaultScraper()
     scrape_result:ScrapeResult = scraper.scrape("https://google.com")
-    assert scrape_result.success, f"Scrape failed: {scrape_result.error}"
+    assert scrape_result.success, f"Scrape failed: {scrape_result.scrape_error}"
     assert scrape_result.content == "Mocked response content"
     mock_get.assert_called_once_with("https://google.com", headers=scraper.headers)
 

@@ -32,7 +32,7 @@ def mock_telegram_scraper():
         def scrape(self, url):
             if "valid" in url:
                 return ScrapeResult(link=url, success=True, content="Mocked Telegram content")
-            return ScrapeResult(link=url, success=False, error="Invalid Telegram link")
+            return ScrapeResult(link=url, success=False, scrape_error="Invalid Telegram link")
     
     yield MockTelegramScraper()
 
@@ -42,7 +42,7 @@ def mock_news_scraper():
         def scrape(self, url):
             if "news" in url:
                 return ScrapeResult(link=url, success=True, content="News content")
-            return ScrapeResult(link=url, success=False, error="Not a news link")
+            return ScrapeResult(link=url, success=False, scrape_error="Not a news link")
     return MockNewsScraper()
 
 @pytest.fixture

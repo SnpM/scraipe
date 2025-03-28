@@ -35,12 +35,12 @@ class TelegramScraper(IScraper):
 
     def scrape(self, url: str) -> ScrapeResult:  # Make scrape an async method
         if not url.startswith("https://t.me/"):
-            return ScrapeResult(link=url, success=False, error=f"URL {url} is not a telegram link.")
+            return ScrapeResult(link=url, success=False, scrape_error=f"URL {url} is not a telegram link.")
         # Extract the username and message id
         match = re.match(r"https://t.me/([^/]+)/(\d+)", url)
         if not match:
             error = f"Failed to extract username and message id from {url}"
-            return ScrapeResult(link=url, success=False, error=error)
+            return ScrapeResult(link=url, success=False, scrape_error=error)
         username, message_id = match.groups()
         try:
             message_id = int(message_id)
@@ -50,7 +50,7 @@ class TelegramScraper(IScraper):
         try:
             content = asyncio.get_event_loop().run_until_complete(self._get_telegram_content(username, message_id))
         except Exception as e:
-            return ScrapeResult(link=url, success=False, error=f"Failed to scrape {url}. Error: {e}")
+            return ScrapeResult(link=url, success=False, scrape_error=f"Failed to scrape {url}. Error: {e}")
         
         return ScrapeResult(link=url, content=content, success=True)
     

@@ -8,10 +8,10 @@ class ScrapeResult(BaseModel):
     link:str
     content:str = None
     success:bool
-    error:str = None
+    scrape_error:str = None
     
     def __str__(self):
-        return f"ScrapeResult(link={self.link}, content={self.content}, success={self.success}, error={self.error})"
+        return f"ScrapeResult(link={self.link}, content={self.content}, success={self.success}, error={self.scrape_error})"
     def __repr__(self):
         return str(self)
 
@@ -19,10 +19,10 @@ class ScrapeResult(BaseModel):
 class AnalysisResult(BaseModel):
     output:dict = None
     success:bool
-    error:str = None
+    analysis_error:str = None
     
     def __str__(self):
-        return f"AnalysisResult(output={self.output}, success={self.success}, error={self.error})"
+        return f"AnalysisResult(output={self.output}, success={self.success}, error={self.analysis_error})"
     def __repr__(self):
         return str(self)
 

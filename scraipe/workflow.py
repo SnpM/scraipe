@@ -56,7 +56,7 @@ class Workflow:
             # Ensure content is not None when success is True
             if result.success and result.content is None:
                 print(f"Warning: Scrape result for {link} is successful but content is None.")
-                self.store[link].scrape_result = ScrapeResult(link=link, success=False, error="Content is None.")
+                self.store[link].scrape_result = ScrapeResult(link=link, success=False, scrape_error="Content is None.")
         
         # Print summary
         success_count = sum([1 for result in scrapes.values() if result.success])
@@ -169,6 +169,9 @@ class Workflow:
         
         # Add link column
         pretty_df["link"] = raw_df["link"]
+        
+        # Add success column
+        pretty_df["success"] = raw_df["success"]
         
         # output column contains dictionary or None. Unnest it
         unnested = pd.json_normalize(raw_df["output"])
