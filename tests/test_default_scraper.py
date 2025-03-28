@@ -24,7 +24,7 @@ def test_scrape_success(mock_get):
 
     scraper = DefaultScraper()
     scrape_result:ScrapeResult = scraper.scrape("https://google.com")
-    assert scrape_result.success, f"Scrape failed: {scrape_result.scrape_error}"
+    assert scrape_result.scrape_success, f"Scrape failed: {scrape_result.scrape_error}"
     assert scrape_result.content == "Mocked response content"
     mock_get.assert_called_once_with("https://google.com", headers=scraper.headers)
 
@@ -35,7 +35,7 @@ def test_scrape_failure(mock_get):
 
     scraper = DefaultScraper()
     result = scraper.scrape("https://invalid-url-aoietasdnlkzbxjcnweaituh.com")
-    assert result.success == False
+    assert result.scrape_success == False
     
 def test_scrape_google():
     # Check if connection to google succeeds
@@ -46,6 +46,6 @@ def test_scrape_google():
         
     scraper = DefaultScraper()
     result = scraper.scrape("https://www.google.com")
-    assert result.success
+    assert result.scrape_success
     assert isinstance(result.content, str)
     assert len(result.content) > 0

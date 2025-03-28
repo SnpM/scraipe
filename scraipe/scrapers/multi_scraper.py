@@ -25,11 +25,11 @@ class MultiScraper(IScraper):
         # Check if the url is a telegram link
         if url.startswith("https://t.me/"):
             if self.telegram_scraper is None:
-                return ScrapeResult(link=url, success=False, scrape_error="Telegram scraper not configured.")
+                return ScrapeResult(link=url, scrape_success=False, scrape_error="Telegram scraper not configured.")
             return self.telegram_scraper.scrape(url)
         # Attempt news scraping
         result = self.news_scraper.scrape(url)
-        if result.success:
+        if result.scrape_success:
             return result
         # Use default scraper as fallback
         return self.default_scraper.scrape(url)

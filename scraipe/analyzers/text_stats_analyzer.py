@@ -31,5 +31,5 @@ class TextStatsAnalyzer(IAnalyzer):
         
         return AnalysisResult(
             output = results,
-            success = True
+            analysis_success = True
         )

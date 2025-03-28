@@ -50,19 +50,19 @@ class OpenAiAnalyzer(IAnalyzer):
         try:
             response = self.query_openai(content)
         except Exception as e:
-            return AnalysisResult(output=None, success=False, analysis_error=f"Failed to query OpenAI: {e}")
+            return AnalysisResult(output=None, analysis_success=False, analysis_error=f"Failed to query OpenAI: {e}")
         
         # Check if response is json string
         try:
             response_dict = json.loads(response)
         except json.JSONDecodeError:
-            return AnalysisResult(success=False, analysis_error=f"OpenAI response is not a valid json string: {response}")
+            return AnalysisResult(analysis_success=False, analysis_error=f"OpenAI response is not a valid json string: {response}")
         
         # Check if response follows the pydantic schema
         if self.pydantic_schema:
             try:
                 self.pydantic_schema(**response_dict)
             except ValidationError as e:
-                return AnalysisResult(output=response_dict, success=False, analysis_error=f"OpenAI response does not follow the pydantic schema: {e}")
+                return AnalysisResult(output=response_dict, analysis_success=False, analysis_error=f"OpenAI response does not follow the pydantic schema: {e}")
         
-        return AnalysisResult(output=response_dict, success=True)
+        return AnalysisResult(output=response_dict, analysis_success=True)

@@ -15,7 +15,7 @@ class DefaultScraper(IScraper):
                 return ScrapeResult(
                     link=url,
                     content=None,
-                    success=False, 
+                    scrape_success=False, 
                     scrape_error=f"Failed to scrape {url}. Status code: {response.status_code}")
             text = response.text
             # Use bs4 to extract the text from the html
@@ -24,6 +24,6 @@ class DefaultScraper(IScraper):
             # Remove multiple consecutive lines
             content = "\n".join([line for line in content.split("\n") if line.strip() != ""])
             
-            return ScrapeResult(link=url, content=content, success=True)
+            return ScrapeResult(link=url, content=content, scrape_success=True)
         except Exception as e:
-            return ScrapeResult(link=url,success=False, scrape_error=f"Failed to scrape {url}. Error: {e}")
+            return ScrapeResult(link=url,scrape_success=False, scrape_error=f"Failed to scrape {url}. Error: {e}")

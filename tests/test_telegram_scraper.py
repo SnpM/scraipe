@@ -38,7 +38,7 @@ def test_live_scrape_valid_url(live_scraper):
     url = TEST_URL
     result = live_scraper.scrape(url)
     assert isinstance(result, ScrapeResult)
-    assert result.success
+    assert result.scrape_success
     assert result.link == url
     assert result.content is not None
 
@@ -48,7 +48,7 @@ def test_live_scrape_invalid_url(live_scraper):
     url = "https://example.com/invalid"
     result = live_scraper.scrape(url)
     assert isinstance(result, ScrapeResult)
-    assert not result.success
+    assert not result.scrape_success
     assert "not a telegram link" in result.scrape_error
 
 def test_live_scrape_nonexistent_message(live_scraper):
@@ -57,7 +57,7 @@ def test_live_scrape_nonexistent_message(live_scraper):
     url = TEST_URL.replace("516", "1000000")
     result = live_scraper.scrape(url)
     assert isinstance(result, ScrapeResult)
-    assert result.success == False
+    assert result.scrape_success == False
     assert result.content is None
 
 def test_mock_scrape_valid_url(mock_scraper):
@@ -66,7 +66,7 @@ def test_mock_scrape_valid_url(mock_scraper):
     url = "https://t.me/mock_channel/123"
     result = mock_scraper.scrape(url)
     assert isinstance(result, ScrapeResult)
-    assert result.success
+    assert result.scrape_success
     assert result.link == url
     assert result.content == "Mocked message content"
 
@@ -75,7 +75,7 @@ def test_mock_scrape_restricted_entity(mock_scraper):
     url = "https://t.me/mock_channel/123"
     result = mock_scraper.scrape(url)
     assert isinstance(result, ScrapeResult)
-    assert not result.success
+    assert not result.scrape_success
     assert "restricted" in result.scrape_error
 
 def test_mock_scrape_nonexistent_message(mock_scraper):
@@ -84,6 +84,6 @@ def test_mock_scrape_nonexistent_message(mock_scraper):
     url = "https://t.me/mock_channel/10000000"
     result = mock_scraper.scrape(url)
     assert isinstance(result, ScrapeResult)
-    assert result.success == False
+    assert result.scrape_success == False
     assert result.content is None
 

@@ -7,22 +7,22 @@ from pydantic import BaseModel
 class ScrapeResult(BaseModel):
     link:str
     content:str = None
-    success:bool
+    scrape_success:bool
     scrape_error:str = None
     
     def __str__(self):
-        return f"ScrapeResult(link={self.link}, content={self.content}, success={self.success}, error={self.scrape_error})"
+        return f"ScrapeResult(link={self.link}, content={self.content}, success={self.scrape_success}, error={self.scrape_error})"
     def __repr__(self):
         return str(self)
 
 @final
 class AnalysisResult(BaseModel):
     output:dict = None
-    success:bool
+    analysis_success:bool
     analysis_error:str = None
     
     def __str__(self):
-        return f"AnalysisResult(output={self.output}, success={self.success}, error={self.analysis_error})"
+        return f"AnalysisResult(output={self.output}, success={self.analysis_success}, error={self.analysis_error})"
     def __repr__(self):
         return str(self)
 

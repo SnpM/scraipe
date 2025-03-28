@@ -56,7 +56,7 @@ class Workflow:
             # Ensure content is not None when success is True
             if result.success and result.content is None:
                 print(f"Warning: Scrape result for {link} is successful but content is None.")
-                self.store[link].scrape_result = ScrapeResult(link=link, success=False, scrape_error="Content is None.")
+                self.store[link].scrape_result = ScrapeResult(link=link, scrape_success=False, scrape_error="Content is None.")
         
         # Print summary
         success_count = sum([1 for result in scrapes.values() if result.success])
@@ -92,7 +92,7 @@ class Workflow:
         # Get list of links to analyze
         links_with_content = []
         for record in self.store.values():
-            if record.scrape_result is not None and record.scrape_result.success:
+            if record.scrape_result is not None and record.scrape_result.scrape_success:
                 links_with_content.append(record.link)
         
                     
