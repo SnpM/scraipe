@@ -50,7 +50,7 @@ class OpenAiAnalyzer(IAnalyzer):
         try:
             response = self.query_openai(content)
         except Exception as e:
-            return AnalysisResult(output=None, analysis_success=False, analysis_error=f"Failed to query OpenAI: {e}")
+            return AnalysisResult(analysis_success=False, analysis_error=f"Failed to query OpenAI: {e}")
         
         # Check if response is json string
         try:
