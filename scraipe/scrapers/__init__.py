@@ -1,2 +1,3 @@
 from scraipe.scrapers.default_scraper import DefaultScraper
 from scraipe.scrapers.news_scraper import NewsScraper
+from scraipe.scrapers.telegram_scraper import TelegramScraper

@@ -1,5 +1,5 @@
 import pytest
-from scraipe.scrapers.telegram_scraper import NewsScraper
+from scraipe.scrapers.telegram_scraper import TelegramScraper
 from scraipe.classes import ScrapeResult
 from unittest.mock import AsyncMock, patch, MagicMock
 
@@ -15,7 +15,7 @@ def live_scraper():
     phone_number = os.environ.get("TELEGRAM_PHONE_NUMBER")
     if not all([name, api_id, api_hash, phone_number]):
         return None
-    scraper =  NewsScraper(name, api_id, api_hash, phone_number)
+    scraper =  TelegramScraper(name, api_id, api_hash, phone_number)
     yield scraper
     scraper.disconnect()
 
@@ -27,7 +27,7 @@ def mock_scraper():
         mock_client.connect = AsyncMock()
         mock_client.get_entity = AsyncMock()
         mock_client.get_messages = AsyncMock()
-        scraper = NewsScraper("mock_name", "mock_api_id", "mock_api_hash", "mock_phone_number")
+        scraper = TelegramScraper("mock_name", "mock_api_id", "mock_api_hash", "mock_phone_number")
         scraper.client = mock_client
         yield scraper
         scraper.disconnect()
