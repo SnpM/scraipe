@@ -20,7 +20,7 @@ class AnalysisResult(BaseModel):
     output:dict = None
     analysis_success:bool
     analysis_error:str = None
-    
+    p
     def __str__(self):
         return f"AnalysisResult(output={self.output}, success={self.analysis_success}, error={self.analysis_error})"
     def __repr__(self):

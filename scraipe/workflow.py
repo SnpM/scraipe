@@ -165,7 +165,7 @@ class Workflow:
     
     def export(self) -> pd.DataFrame:
         """Export links and unnested outputs."""
-        raw_df = self.get_analyses()
+        raw_df = self.get_records()
         pretty_df = pd.DataFrame()
         
         # Add link column
