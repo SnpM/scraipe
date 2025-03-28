@@ -6,3 +6,4 @@ tqdm
 bs4==0.0.2
 newspaper3k==0.2.8
 lxml[html_clean]
+telethon
