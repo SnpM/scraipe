@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "scraipe"
-version = "0.1.11"
+version = "0.1.12"
 description = "AI web scraping workflow."
 readme = { file = "README.md", content-type = "text/markdown" }
 license = { text = "MIT" }

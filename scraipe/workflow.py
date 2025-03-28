@@ -104,7 +104,7 @@ class Workflow:
         # Analyze the content
         content_dict = {link: self.store[link].scrape_result.content for link in links_to_analyze}
         assert all([content is not None for content in content_dict.values()])
-        analyses:Dict[AnalysisResult] = self.analyzer.analyze_multiple(content_dict)
+        analyses:Dict[str,AnalysisResult] = self.analyzer.analyze_multiple(content_dict)
         
         # Update the store
         for link, result in analyses.items():
