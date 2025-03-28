@@ -50,16 +50,17 @@ class Workflow:
         
         # Update the scrape store
         for link, result in scrapes.items():
+            result:ScrapeResult
             if link not in self.store:
                 self.store[link] = self.StoreRecord(link)
             self.store[link].scrape_result = result
             # Ensure content is not None when success is True
-            if result.success and result.content is None:
+            if result.scrape_success and result.content is None:
                 print(f"Warning: Scrape result for {link} is successful but content is None.")
                 self.store[link].scrape_result = ScrapeResult(link=link, scrape_success=False, scrape_error="Content is None.")
         
         # Print summary
-        success_count = sum([1 for result in scrapes.values() if result.success])
+        success_count = sum([1 for result in scrapes.values() if result.scrape_success])
         print(f"Successfully scraped {success_count}/{len(links_to_scrape)} links.")
     
     def get_scrapes(self) -> pd.DataFrame:
@@ -110,7 +111,7 @@ class Workflow:
             self.store[link].analysis_result = result
         
         # Print summary
-        success_count = sum([1 for result in analyses.values() if result.success])
+        success_count = sum([1 for result in analyses.values() if result.analysis_success])
         print(f"Successfully analyzed {success_count}/{len(content_dict)} links.")
     
     def get_analyses(self) -> pd.DataFrame:
