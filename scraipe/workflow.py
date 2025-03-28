@@ -52,7 +52,11 @@ class Workflow:
         for link, result in scrapes.items():
             if link not in self.store:
                 self.store[link] = self.StoreRecord(link)
-            self.store[link].scrape_result = result
+            self.store[link].scrape_rewlt = result
+            # Ensure content is not None when success is True
+            if result.success and result.content is None:
+                print(f"Warning: Scrape result for {link} is successful but content is None.")
+                self.store[link].scrape_result = ScrapeResult(link=link, success=False, error="Content is None.")
         
         # Print summary
         success_count = sum([1 for result in scrapes.values() if result.success])
@@ -86,10 +90,11 @@ class Workflow:
     def analyze(self, overwrite:bool=False):
         """Analyze the unanalyzed content in the scrape store."""
         # Get list of links to analyze
-        if overwrite:
-            links_to_analyze = [record.link for record in self.store.values() if record.scrape_result is not None]
-        else:
-            links_to_analyze = [record.link for record in self.store.values() if record.scrape_result is not None and record.analysis_result is None]
+        links_to_analyze = []
+        for record in self.store.values():
+            if record.scrape_result is not None and record.scrape_result.success:
+                if record.analysis_result is None or overwrite:
+                    links_to_analyze.append(record.link)
         print(f"Analyzing {len(links_to_analyze)}/{len(self.store)} new or failed links...")
         
         # Analyze the content
