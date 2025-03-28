@@ -171,8 +171,9 @@ class Workflow:
         # Add link column
         pretty_df["link"] = raw_df["link"]
         
-        # Add success column
-        pretty_df["success"] = raw_df["success"]
+        # Add success columns for scrape and analysis
+        pretty_df["scrape_success"] = raw_df["scrape_success"]
+        pretty_df["analysis_success"] = raw_df["analysis_success"]
         
         # output column contains dictionary or None. Unnest it
         unnested = pd.json_normalize(raw_df["output"])
