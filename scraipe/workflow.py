@@ -52,7 +52,7 @@ class Workflow:
         for link, result in scrapes.items():
             if link not in self.store:
                 self.store[link] = self.StoreRecord(link)
-            self.store[link].scrape_rewlt = result
+            self.store[link].scrape_result = result
             # Ensure content is not None when success is True
             if result.success and result.content is None:
                 print(f"Warning: Scrape result for {link} is successful but content is None.")
