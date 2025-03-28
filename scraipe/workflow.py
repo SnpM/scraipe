@@ -44,7 +44,7 @@ class Workflow:
             for link in links:
                 if link not in self.store or self.store[link].scrape_result is None:
                     links_to_scrape.append(link)
-        print (f"Scraping {len(links_to_scrape)}/{len(links)} new or failed links...")
+        print (f"Scraping {len(links_to_scrape)}/{len(links)} new or retry links...")
         
         scrapes:Dict[ScrapeResult] = self.scraper.scrape_multiple(links_to_scrape)
         
@@ -90,16 +90,19 @@ class Workflow:
     def analyze(self, overwrite:bool=False):
         """Analyze the unanalyzed content in the scrape store."""
         # Get list of links to analyze
-        content_dict = {}
+        links_with_content = []
         for record in self.store.values():
             if record.scrape_result is not None and record.scrape_result.success:
-                if record.analysis_result is None or overwrite:
-                    content_dict[record.link] = record.scrape_result.content
-        print(f"Analyzing {len(content_dict)}/{len(self.store)} new or failed links...")
+                links_with_content.append(record.link)
+        
+                    
+        links_to_analyze = [link for link in links_with_content if self.store[link].analysis_result is None]
+            
+        print(f"Analyzing {len(links_to_analyze)}/{len(links_with_content)} new or retry links with content...")
         
         # Analyze the content
+        content_dict = {link: self.store[link].scrape_result.content for link in links_to_analyze}
         assert all([content is not None for content in content_dict.values()])
-        
         analyses:Dict[AnalysisResult] = self.analyzer.analyze_multiple(content_dict)
         
         # Update the store
