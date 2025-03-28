@@ -90,16 +90,14 @@ class Workflow:
     def analyze(self, overwrite:bool=False):
         """Analyze the unanalyzed content in the scrape store."""
         # Get list of links to analyze
-        links_to_analyze = []
+        content_dict = {}
         for record in self.store.values():
             if record.scrape_result is not None and record.scrape_result.success:
                 if record.analysis_result is None or overwrite:
-                    links_to_analyze.append(record.link)
-        print(f"Analyzing {len(links_to_analyze)}/{len(self.store)} new or failed links...")
+                    content_dict[record.link] = record.scrape_result.content
+        print(f"Analyzing {len(content_dict)}/{len(self.store)} new or failed links...")
         
         # Analyze the content
-        content_dict = {record.link:record.scrape_result.content for record in self.store.values() if record.scrape_result is not None}
-        assert len(content_dict) == len(links_to_analyze)
         assert all([content is not None for content in content_dict.values()])
         
         analyses:Dict[AnalysisResult] = self.analyzer.analyze_multiple(content_dict)
@@ -110,7 +108,7 @@ class Workflow:
         
         # Print summary
         success_count = sum([1 for result in analyses.values() if result.success])
-        print(f"Successfully analyzed {success_count}/{len(links_to_analyze)} links.")
+        print(f"Successfully analyzed {success_count}/{len(content_dict)} links.")
     
     def get_analyses(self) -> pd.DataFrame:
         """Return a copy of the store's analysis results as a DataFrame"""
