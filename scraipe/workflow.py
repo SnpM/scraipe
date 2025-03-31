@@ -41,26 +41,31 @@ class Workflow:
             links_to_scrape = links
         else:
             links_to_scrape = []
-            for link in links:
-                if link not in self.store or self.store[link].scrape_result is None:
-                    links_to_scrape.append(link)
+            for url in links:
+                if url not in self.store or self.store[url].scrape_result is None or self.store[url].scrape_result.scrape_success == False:
+                    # If the link is not in the store or the scrape result is None or failed, add it to the list
+                    links_to_scrape.append(url)
         print (f"Scraping {len(links_to_scrape)}/{len(links)} new or retry links...")
         
-        scrapes:Dict[ScrapeResult] = self.scraper.scrape_multiple(links_to_scrape)
         
+        scrapes = {}
         # Update the scrape store
-        for link, result in scrapes.items():
-            result:ScrapeResult
-            if link not in self.store:
-                self.store[link] = self.StoreRecord(link)
-            self.store[link].scrape_result = result
-            # Ensure content is not None when success is True
-            if result.scrape_success and result.content is None:
-                print(f"Warning: Scrape result for {link} is successful but content is None.")
-                self.store[link].scrape_result = ScrapeResult(link=link, scrape_success=False, scrape_error="Content is None.")
-        
+        try:
+            for url,result in self.scraper.scrape_multiple(links_to_scrape):
+                scrapes[url] = result
+                if url not in self.store:
+                    self.store[url] = self.StoreRecord(url)
+                self.store[url].scrape_result = result
+                
+                # Sanity check: ensure content is not None when success is True
+                if result.scrape_success and result.content is None:
+                    print(f"Warning: Scrape result for {url} is successful but content is None.")
+                    self.store[url].scrape_result = ScrapeResult(link=url, scrape_success=False, scrape_error="Content is None.")
+        except Exception as e:
+            print(f"Error during scraping: {e}. Halting.")
+            
         # Print summary
-        success_count = sum([1 for result in scrapes.values() if result.scrape_success])
+        success_count = sum(1 for result in scrapes.values() if result.scrape_success)
         print(f"Successfully scraped {success_count}/{len(links_to_scrape)} links.")
     
     def get_scrapes(self) -> pd.DataFrame:
@@ -104,11 +109,16 @@ class Workflow:
         # Analyze the content
         content_dict = {link: self.store[link].scrape_result.content for link in links_to_analyze}
         assert all([content is not None for content in content_dict.values()])
-        analyses:Dict[str,AnalysisResult] = self.analyzer.analyze_multiple(content_dict)
-        
-        # Update the store
-        for link, result in analyses.items():
-            self.store[link].analysis_result = result
+        # update the store
+        analyses = {}
+        try:
+            for link, result in self.analyzer.analyze_multiple(content_dict):
+                print(result)
+                self.store[link].analysis_result = result
+                analyses[link] = result
+                print(f"Analyzed {link}: {result}")
+        except Exception as e:
+            print(f"Error during analysis: {e}. Halting.")
         
         # Print summary
         success_count = sum([1 for result in analyses.values() if result.analysis_success])

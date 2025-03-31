@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import final, List, Dict
+from typing import final, List, Dict, Generator, Tuple
 import tqdm
 from pydantic import BaseModel
 
@@ -32,13 +32,11 @@ class IScraper(ABC):
         """Get content from the url"""
         raise NotImplementedError()
 
-    def scrape_multiple(self, urls: List[str]) -> Dict[str, ScrapeResult]:
+    def scrape_multiple(self, urls: List[str]) -> Generator[Tuple[str, ScrapeResult], None, None]:
         """Get content from multiple urls."""
-        results = {}
         for url in tqdm.tqdm(urls, desc="Scraping URLs"):
             result = self.scrape(url)
-            results[url] = result
-        return results
+            yield url, result
 
 class IAnalyzer(ABC):
     @abstractmethod
@@ -46,10 +44,8 @@ class IAnalyzer(ABC):
         """Analyze the content and return the extracted information as a dict."""
         raise NotImplementedError()
     
-    def analyze_multiple(self, contents: Dict[str, str]) -> Dict[str, AnalysisResult]:
+    def analyze_multiple(self, contents: Dict[str, str]) -> Generator[Tuple[str, AnalysisResult], None, None]:
         """Analyze multiple contents."""
-        results = {}
         for link, content in tqdm.tqdm(contents.items(), desc="Analyzing content"):
             result = self.analyze(content)
-            results[link] = result
-        return results
+            yield link, result

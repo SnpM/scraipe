@@ -8,14 +8,10 @@ class MockScraper(IScraper):
         if "valid" in url:
             return ScrapeResult(link=url, scrape_success=True, content="Mocked content")
         return ScrapeResult(link=url, scrape_success=False, scrape_error="Invalid link")
-    def scrape_multiple(self, links):
-        return {link: ScrapeResult(link=link, scrape_success=True, content=f"Content for {link}") for link in links}
 
 class MockAnalyzer(IAnalyzer):
     def analyze(self, content):
-        return AnalysisResult(link=content.link, analysis_success=True, output={"summary": "Mocked summary"})
-    def analyze_multiple(self, content_dict):
-        return {link: AnalysisResult(link=link, analysis_success=True, output={"summary": f"Summary for {link}"}) for link in content_dict}
+        return AnalysisResult(analysis_success=True, output={"summary": "Mocked summary"})
 
 @pytest.fixture
 def workflow():
@@ -24,21 +20,21 @@ def workflow():
     return Workflow(scraper, analyzer)
 
 def test_scrape(workflow):
-    links = ["http://example.com/1", "http://example.com/2"]
+    links = ["http://example.com/valid/1", "http://example.com/valid/2"]
     workflow.scrape(links)
     assert len(workflow.store) == 2
     for link in links:
         assert workflow.store[link].scrape_result.scrape_success
 
 def test_analyze(workflow):
-    links = ["http://example.com/1", "http://example.com/2"]
+    links = ["http://example.com/valid/1", "http://example.com/valid/2"]
     workflow.scrape(links)
     workflow.analyze()
     for link in links:
         assert workflow.store[link].analysis_result.analysis_success
 
 def test_get_records(workflow):
-    links = ["http://example.com/1", "http://example.com/2"]
+    links = ["http://example.com/valid/1", "http://example.com/valid/2"]
     workflow.scrape(links)
     workflow.analyze()
     records_df = workflow.get_records()
@@ -62,7 +58,7 @@ def test_update_records(workflow):
     assert workflow.store["http://example.com/1"].analysis_result.output["summary"] == "Updated summary"
 
 def test_export(workflow):
-    links = ["http://example.com/1", "http://example.com/2"]
+    links = ["http://example.com/valid/1", "http://example.com/valid/2"]
     workflow.scrape(links)
     workflow.analyze()
     export_df = workflow.export()
