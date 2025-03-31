@@ -1,7 +1,8 @@
 from scraipe.classes import IScraper, ScrapeResult
 import requests
 from bs4 import BeautifulSoup
-from newspaper import Article
+
+import trafilatura
 
 class NewsScraper(IScraper):
     """A scraper that uses the newspaper3k library to extract article content."""
@@ -11,18 +12,19 @@ class NewsScraper(IScraper):
     
     def scrape(self, url:str)->ScrapeResult:
         try:
-            article = Article(url)
             response = requests.get(url, headers=self.headers)
             if response.status_code != 200:
                 return ScrapeResult(
                     link=url,
-                    content=None,
                     scrape_success=False, 
                     scrape_error=f"Failed to scrape {url}. Status code: {response.status_code}")
-            text = response.text
-            article.set_html(text)
-            article.parse()
-            content = article.text
+            html = response.text
+            
+            content = trafilatura.extract(
+                html, 
+                url=url,
+                output_format="txt")
+            
             if not content:
                 return ScrapeResult(link=url, scrape_success=False, scrape_error=f"Failed to news from {url}. No content found.")
             return ScrapeResult(link=url, content=content, scrape_success=True)
