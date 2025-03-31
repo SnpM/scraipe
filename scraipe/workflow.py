@@ -165,17 +165,19 @@ class Workflow:
     
     def export(self) -> pd.DataFrame:
         """Export links and unnested outputs."""
-        raw_df = self.get_records()
+        records = self.store.values()
         pretty_df = pd.DataFrame()
         
         # Add link column
-        pretty_df["link"] = raw_df["link"]
+        pretty_df["link"] = [record.link for record in records]
         
         # Add success columns for scrape and analysis
-        pretty_df["scrape_success"] = raw_df["scrape_success"]
-        pretty_df["analysis_success"] = raw_df["analysis_success"]
+        pretty_df["scrape_success"] = [record.scrape_result.scrape_success if record.scrape_result else False for record in records]
+        pretty_df["analysis_success"] = [record.analysis_result.analysis_success if record.analysis_result else False for record in records]
         
+        outputs = [record.analysis_result.output if record.analysis_result else None for record in records]
         # output column contains dictionary or None. Unnest it
-        unnested = pd.json_normalize(raw_df["output"])
+        unnested = pd.json_normalize(outputs)
+        # Add the unnested columns to the pretty_df
         pretty_df = pd.concat([pretty_df, unnested], axis=1)
         return pretty_df
