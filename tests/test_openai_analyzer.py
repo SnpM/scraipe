@@ -71,8 +71,8 @@ def test_analyze_invalid_json(mock_query_openai, analyzer):
 
     content = TEST_CONTENT
     analysis_result = analyzer.analyze(content)
-    assert not analysis_result.success
-    assert "not a valid json string" in analysis_result.error
+    assert not analysis_result.analysis_success
+    assert "not a valid json string" in analysis_result.analysis_error
 
 
 @patch("scraipe.analyzers.openai_analyzer.OpenAiAnalyzer.query_openai")
@@ -81,5 +81,5 @@ def test_analyze_schema_validation_failure(mock_query_openai, analyzer):
 
     content = TEST_CONTENT
     analysis_result = analyzer.analyze(content)
-    assert not analysis_result.success
-    assert "schema" in analysis_result.error
+    assert not analysis_result.analysis_success
+    assert "schema" in analysis_result.analysis_error

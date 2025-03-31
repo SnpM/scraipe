@@ -14,7 +14,7 @@ def live_scraper():
     api_hash = os.environ.get("TELEGRAM_API_HASH")
     phone_number = os.environ.get("TELEGRAM_PHONE_NUMBER")
     if not all([name, api_id, api_hash, phone_number]):
-        return None
+        pytest.skip("Live scraper credentials are not set in the environment.")
     scraper =  TelegramScraper(name, api_id, api_hash, phone_number)
     yield scraper
     scraper.disconnect()

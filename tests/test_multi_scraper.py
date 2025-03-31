@@ -66,17 +66,17 @@ def test_telegram_scraper(multi_scraper):
     else:
         url = "https://t.me/valid"
     result = multi_scraper.scrape(url)
-    assert result.success
+    assert result.scrape_success
     assert len(result.content) > 0
 
 def test_news_scraper(multi_scraper):
     url = "https://example.com/news"
     result = multi_scraper.scrape(url)
-    assert result.success
+    assert result.scrape_success
     assert result.content == "News content"
 
 def test_default_scraper(multi_scraper):
     url = "https://example.com/other"
     result = multi_scraper.scrape(url)
-    assert result.success
+    assert result.scrape_success
     assert result.content == "Default content"
