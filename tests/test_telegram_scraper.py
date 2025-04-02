@@ -3,6 +3,8 @@ from scraipe.extras.telegram_scraper import TelegramScraper
 from scraipe.classes import ScrapeResult
 from unittest.mock import AsyncMock, patch, MagicMock
 
+TARGET_MODULE = TelegramScraper.__module__
+
 TEST_URL = "https://t.me/TelegramTips/516"
 
 
@@ -20,10 +22,9 @@ def live_scraper():
     yield scraper
     scraper.disconnect()
 
-TELEGRAM_CLIENT_PATH = "scraipe.extras.telegram_scraper.TelegramClient" 
 @pytest.fixture
 def mock_scraper():
-    with patch(TELEGRAM_CLIENT_PATH) as MockClient:
+    with patch(f"{TARGET_MODULE}.TelegramClient") as MockClient:
         mock_client = MagicMock()
         MockClient.return_value = mock_client
         mock_client.connect = AsyncMock()

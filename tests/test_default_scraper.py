@@ -1,7 +1,9 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from scraipe.scrapers.default_scraper import DefaultScraper
+from scraipe.defaults.default_scraper import DefaultScraper
 from scraipe import ScrapeResult,AnalysisResult
+
+TARGET_MODULE=DefaultScraper.__module__
 
 
 def test_default_headers():
@@ -15,7 +17,7 @@ def test_custom_headers():
     assert scraper.headers == custom_headers
 
 
-@patch("scraipe.scrapers.default_scraper.requests.get")
+@patch(f"{TARGET_MODULE}.requests.get")
 def test_scrape_success(mock_get):
     mock_response = MagicMock()
     mock_response.text = "Mocked response content"
@@ -29,7 +31,7 @@ def test_scrape_success(mock_get):
     mock_get.assert_called_once_with("https://google.com", headers=scraper.headers)
 
 
-@patch("scraipe.scrapers.default_scraper.requests.get")
+@patch(f"{TARGET_MODULE}.requests.get")
 def test_scrape_failure(mock_get):
     mock_get.side_effect = Exception("Request failed")
 

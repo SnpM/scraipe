@@ -1,7 +1,7 @@
 from scraipe.classes import IScraper, ScrapeResult
-from scraipe.extras import TelegramScraper
-from scraipe.scrapers.default_scraper import DefaultScraper
-from scraipe.scrapers.news_scraper import NewsScraper
+from scraipe.extras.telegram_scraper import TelegramScraper
+from scraipe.defaults.default_scraper import DefaultScraper
+from scraipe.extras.news_scraper import NewsScraper
 
 class MultiScraper(IScraper):
     """A scraper that picks the best scraper approach for telegram, news, and default webpages."""

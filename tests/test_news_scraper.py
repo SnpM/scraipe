@@ -1,26 +1,28 @@
 import pytest
 from unittest.mock import patch, Mock
-from scraipe.scrapers.news_scraper import NewsScraper
+from scraipe.extras.news_scraper import NewsScraper
 from scraipe.classes import ScrapeResult
+
+TARGET_MODULE = NewsScraper.__module__
 
 @pytest.fixture
 def scraper():
     return NewsScraper()
 
-@patch("scraipe.scrapers.news_scraper.requests.get")
+@patch(f"{TARGET_MODULE}.requests.get")
 def test_scrape_success(mock_get, scraper):
     mock_response = Mock()
     mock_response.status_code = 200
     mock_response.text = "<html><body>Sample content</body></html>"
     mock_get.return_value = mock_response
 
-    with patch("scraipe.scrapers.news_scraper.trafilatura.extract", return_value="Extracted content"):
+    with patch(f"{TARGET_MODULE}.trafilatura.extract", return_value="Extracted content"):
         result = scraper.scrape("http://example.com")
         assert result.scrape_success is True
         assert result.content == "Extracted content"
         assert result.link == "http://example.com"
 
-@patch("scraipe.scrapers.news_scraper.requests.get")
+@patch(f"{TARGET_MODULE}.requests.get")
 def test_scrape_failure_status_code(mock_get, scraper):
     mock_response = Mock()
     mock_response.status_code = 404
@@ -31,7 +33,7 @@ def test_scrape_failure_status_code(mock_get, scraper):
     assert result.content is None
     assert "Status code: 404" in result.scrape_error
 
-@patch("scraipe.scrapers.news_scraper.requests.get")
+@patch(f"{TARGET_MODULE}.requests.get")
 def test_scrape_failure_exception(mock_get, scraper):
     mock_get.side_effect = Exception("Connection error")
 

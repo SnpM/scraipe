@@ -1,5 +1,5 @@
 import pytest
-from scraipe.analyzers.text_stats_analyzer import TextStatsAnalyzer
+from scraipe.defaults.text_stats_analyzer import TextStatsAnalyzer
 from scraipe.classes import AnalysisResult
 
 @pytest.fixture

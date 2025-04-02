@@ -1,7 +1,10 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from scraipe.analyzers.openai_analyzer import OpenAiAnalyzer
+
+from scraipe.extras.openai_analyzer import OpenAiAnalyzer
 import pydantic
+
+TARGET_MODULE=OpenAiAnalyzer.__module__
 
 class MockSchema(pydantic.BaseModel):
     location: str
@@ -55,7 +58,7 @@ def test_analyze_live(live_analyzer):
     assert output["location"] == "Rome"
 
 
-@patch("scraipe.analyzers.openai_analyzer.OpenAiAnalyzer.query_openai")
+@patch(f"{TARGET_MODULE}.OpenAiAnalyzer.query_openai")
 def test_analyze_valid_response(mock_query_openai, analyzer):
     mock_query_openai.return_value = '{"location": "value"}'
 
@@ -65,7 +68,7 @@ def test_analyze_valid_response(mock_query_openai, analyzer):
     assert output == {"location": "value"}
 
 
-@patch("scraipe.analyzers.openai_analyzer.OpenAiAnalyzer.query_openai")
+@patch(f"{TARGET_MODULE}.OpenAiAnalyzer.query_openai")
 def test_analyze_invalid_json(mock_query_openai, analyzer):
     mock_query_openai.return_value = "Invalid JSON"
 
@@ -75,7 +78,7 @@ def test_analyze_invalid_json(mock_query_openai, analyzer):
     assert "not a valid json string" in analysis_result.analysis_error
 
 
-@patch("scraipe.analyzers.openai_analyzer.OpenAiAnalyzer.query_openai")
+@patch(f"{TARGET_MODULE}.OpenAiAnalyzer.query_openai")
 def test_analyze_schema_validation_failure(mock_query_openai, analyzer):
     mock_query_openai.return_value = '{"invalid_key": "value"}'
 

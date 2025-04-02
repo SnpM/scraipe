@@ -1,9 +1,7 @@
 import os
 import pytest
-from scraipe.extras.multi_scraper import MultiScraper
-from scraipe.extras.telegram_scraper import TelegramScraper
-from scraipe.scrapers.news_scraper import NewsScraper
-from scraipe.scrapers.default_scraper import DefaultScraper
+from scraipe.extras import MultiScraper
+from scraipe.extras import TelegramScraper
 from scraipe.classes import ScrapeResult
 from unittest.mock import MagicMock
 

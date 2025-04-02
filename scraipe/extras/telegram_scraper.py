@@ -1,13 +1,12 @@
 from scraipe.classes import IScraper, ScrapeResult
 import requests
 from bs4 import BeautifulSoup
-from newspaper import Article
 from telethon import TelegramClient
 import re
 import asyncio
 
 class TelegramScraper(IScraper):
-    """A scraper that uses the newspaper3k library to extract article content."""
+    """A scraper that uses the telethon library to pull the contents of telegram messages."""
     client: TelegramClient
     DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
     def __init__(self, name: str, api_id: str, api_hash: str, phone_number: str):

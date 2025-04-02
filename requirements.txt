@@ -1,9 +1,0 @@
-requests
-openai==1.68.2
-pydantic==2.10.6
-pandas==2.2.3
-tqdm
-bs4==0.0.2
-lxml[html_clean]
-telethon
-trafilatura=2.0.0

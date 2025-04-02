@@ -1,32 +1,26 @@
-[build-system]
-requires = ["setuptools>=61.0", "wheel"]
-build-backend = "setuptools.build_meta"
-
-[project]
+[tool.poetry]
 name = "scraipe"
 version = "0.1.12"
 description = "AI web scraping workflow."
-readme = { file = "README.md", content-type = "text/markdown" }
-license = { text = "MIT" }
-requires-python = ">=3.10"
-authors = [
-    { name = "Nibs" }
-]
-dependencies = [
-  "requests",
-  "openai==1.68.2",
-  "pydantic>=2.10.6",
-  "pandas>=2.2.3",
-  "tqdm",
-  "bs4==0.0.2",
-  "newspaper3k==0.2.8",
-  "lxml[html_clean]"
-]
-[project.optional-dependencies]
-extras=["telethon"]
+readme = "README.md"
+license = "MIT"
+authors = ["Nibs"]
+homepage = "https://github.com/snpm/scraipe"
 
-[project.urls]
-"Homepage" = "https://github.com/snpm/scraipe"
+[tool.poetry.dependencies]
+python = ">=3.10,"  # Correct placement of Python version requirement
+requests = "*"
+pydantic = ">=2.10.6"
+pandas = ">=2.2.3"
+tqdm = "*"
+bs4 = "0.0.2"
+# scraipe[extras] dependencies
+openai = {version = "1.68.2", optional = true }
+trafilatura = { version = "2.0.0", markers = "python_version < '4'" , optional = true }
+telethon = { version = "1.39.0", optional = true }
 
-[project.optional-dependencies]
-dev = ["pytest"]
+[tool.poetry.extras]
+extras = ["telethon", "trafilatura", "openai"]
+
+[tool.poetry.group.dev.dependencies]
+pytest = "*"
