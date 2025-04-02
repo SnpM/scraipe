@@ -113,10 +113,8 @@ class Workflow:
         analyses = {}
         try:
             for link, result in self.analyzer.analyze_multiple(content_dict):
-                print(result)
                 self.store[link].analysis_result = result
                 analyses[link] = result
-                print(f"Analyzed {link}: {result}")
         except Exception as e:
             print(f"Error during analysis: {e}. Halting.")
         

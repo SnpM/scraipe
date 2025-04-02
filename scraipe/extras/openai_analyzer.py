@@ -59,10 +59,12 @@ class OpenAiAnalyzer(IAnalyzer):
             return AnalysisResult(analysis_success=False, analysis_error=f"OpenAI response is not a valid json string: {response}")
         
         # Check if response follows the pydantic schema
+        output = response_dict
         if self.pydantic_schema:
             try:
-                self.pydantic_schema(**response_dict)
+                validated = self.pydantic_schema(**response_dict)
+                output = validated.model_dump()
             except ValidationError as e:
                 return AnalysisResult(output=response_dict, analysis_success=False, analysis_error=f"OpenAI response does not follow the pydantic schema: {e}")
         
-        return AnalysisResult(output=response_dict, analysis_success=True)
+        return AnalysisResult(output=output, analysis_success=True)
