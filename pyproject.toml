@@ -22,6 +22,8 @@ dependencies = [
   "newspaper3k==0.2.8",
   "lxml[html_clean]"
 ]
+[project.optional-dependencies]
+extras=["telethon"]
 
 [project.urls]
 "Homepage" = "https://github.com/snpm/scraipe"
