@@ -22,16 +22,22 @@ class OpenAiAnalyzer(IAnalyzer):
         instruction:str,
         organization:str=None,
         pydantic_schema:Type[BaseModel] = None,
-        model:str="gpt-4o-mini"):
+        model:str="gpt-4o-mini",
+        max_content_size:int=10000):
         """Initializes the OpenAIAnalyzer instance."""
         self.api_key = api_key
         self.client = OpenAI(api_key=api_key,organization=organization)
         self.instruction = instruction
         self.pydantic_schema = pydantic_schema
         self.model = model
+        self.max_content_size = max_content_size
     
     def query_openai(self, content:str) -> str:
         """Queries the OpenAI API with the content and configured instruction."""
+        # Cap the content size to the max_content_size
+        if len(content) > self.max_content_size:
+            content = content[:self.max_content_size]
+        
         # Send the content with the instruction as a system instruction
         messages=[
             {"role": "system", "content": self.instruction},
