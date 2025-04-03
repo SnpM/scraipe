@@ -1,6 +1,6 @@
 import asyncio
 import pytest
-from scraipe.extras.async_util import EventLoopPoolExecutor
+from scraipe.async_util import EventLoopPoolExecutor
 from asdftimer import Timer
 
 async def successful_async_function(a, b):

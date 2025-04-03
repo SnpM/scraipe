@@ -3,8 +3,8 @@ import requests
 from bs4 import BeautifulSoup
 from telethon import TelegramClient
 import re
-from scraipe.extras.async_classes import AsyncScraperBase
-from scraipe.extras.async_util import AsyncManager
+from scraipe.async_classes import AsyncScraperBase
+from scraipe.async_util import AsyncManager
 
 class TelegramScraper(AsyncScraperBase):
     """A scraper that uses the telethon library to pull the contents of telegram messages."""

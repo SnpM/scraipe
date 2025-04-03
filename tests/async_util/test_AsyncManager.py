@@ -1,6 +1,6 @@
 import asyncio
 import pytest
-from scraipe.extras.async_util import AsyncManager
+from scraipe.async_util import AsyncManager
 from asdftimer import Timer
 async def async_add(a, b):
     await asyncio.sleep(0.1)

@@ -1,7 +1,7 @@
 import asyncio
 import pytest
 from scraipe.classes import ScrapeResult
-from scraipe.extras.async_classes import AsyncScraperBase
+from scraipe.async_classes import AsyncScraperBase
 
 # Dummy subclass with a concrete implementation for testing
 class DummyScraper(AsyncScraperBase):
