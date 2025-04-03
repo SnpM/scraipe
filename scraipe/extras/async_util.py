@@ -23,24 +23,21 @@ class IAsyncExecutor:
 @final
 class DefaultThreadExecutor(IAsyncExecutor):
     """Run a function in the current thread with an asyncio event loop.
-    
+    Stateless executor that runs functions in the current thread.
     Uses nest_asyncio to allow running coroutines in environments like Jupyter.
     """
     def run(self, async_func: Callable[..., Awaitable[Any]], *args, **kwargs) -> Any:
+        assert isinstance(async_func, Callable), "async_func must be callable"
+        assert asyncio.iscoroutinefunction(async_func), "async_func must be a coroutine function"
+        
         coro = async_func(*args, **kwargs)
-        try:
-            # Attempt to get the current running event loop.
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            loop = None
+        loop = asyncio.get_event_loop()
 
-        if loop and loop.is_running():
+        if loop.is_running():            
             # Patch the current loop to allow nested run_until_complete calls.
             nest_asyncio.apply(loop)
-            return loop.run_until_complete(coro)
-        else:
-            return asyncio.run(coro)
-    
+        return loop.run_until_complete(coro)
+
     async def async_run(self, async_func: Callable[..., Awaitable[Any]], *args, **kwargs) -> Any:
         # Just run the function in the current thread.
         return await async_func(*args, **kwargs)
