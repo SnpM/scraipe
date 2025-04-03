@@ -181,3 +181,4 @@ openai_key.txt
 poetry.lock
 .vscode/*
 secrets.env
+*.session-journal*
