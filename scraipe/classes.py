@@ -14,6 +14,24 @@ class ScrapeResult(BaseModel):
         return f"ScrapeResult(link={self.link}, content={self.content}, success={self.scrape_success}, error={self.scrape_error})"
     def __repr__(self):
         return str(self)
+    
+    @staticmethod
+    def success(link: str, content: str) -> 'ScrapeResult':
+        """Creates a ScrapeResult for a successful scrape."""
+        return ScrapeResult(
+            link=link,
+            content=content,
+            scrape_success=True
+        )
+    
+    @staticmethod
+    def fail(link: str, error: str) -> 'ScrapeResult':
+        """Creates a ScrapeResult for a failed scrape."""
+        return ScrapeResult(
+            link=link,
+            scrape_success=False,
+            scrape_error=error
+        )
 
 @final
 class AnalysisResult(BaseModel):
@@ -25,6 +43,22 @@ class AnalysisResult(BaseModel):
         return f"AnalysisResult(output={self.output}, success={self.analysis_success}, error={self.analysis_error})"
     def __repr__(self):
         return str(self)
+    
+    @staticmethod
+    def success(output:dict) -> 'AnalysisResult':
+        """Creates an AnalysisResult for a successful run."""
+        return AnalysisResult(
+            analysis_success=True,
+            output=output
+        )
+    
+    @staticmethod
+    def fail(error:str) -> 'AnalysisResult':
+        """Creates an AnalysisResult for an unsuccessful run."""
+        return AnalysisResult(
+            analysis_success=False,
+            analysis_error=error
+        )
 
 class IScraper(ABC):
     @abstractmethod

@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import patch, MagicMock
 
-from scraipe.extras.openai_analyzer import OpenAiAnalyzer
+from scraipe.extras.llm_analyzers import OpenAiAnalyzer
 import pydantic
 
 TARGET_MODULE=OpenAiAnalyzer.__module__
@@ -43,7 +43,7 @@ def test_query_live(live_analyzer):
     if live_analyzer is None:
         pytest.skip("No OpenAI API key found in the environment. Set the OPENAI_API_KEY environment variable to run this test.")
         return
-    result = live_analyzer.query_openai(TEST_CONTENT)
+    result = live_analyzer.query_llm(TEST_CONTENT, TEST_INSTRUCTION)
     assert isinstance(result, str)
     assert len(result) > 0
 
@@ -58,9 +58,9 @@ def test_analyze_live(live_analyzer):
     assert output["location"] == "Rome"
 
 
-@patch(f"{TARGET_MODULE}.OpenAiAnalyzer.query_openai")
-def test_analyze_valid_response(mock_query_openai, analyzer):
-    mock_query_openai.return_value = '{"location": "value"}'
+@patch(f"{TARGET_MODULE}.OpenAiAnalyzer.query_llm")
+def test_analyze_valid_response(mock_query_llm, analyzer):
+    mock_query_llm.return_value = '{"location": "value"}'
 
     content = TEST_CONTENT
     result = analyzer.analyze(content)
@@ -68,9 +68,9 @@ def test_analyze_valid_response(mock_query_openai, analyzer):
     assert output == {"location": "value"}
 
 
-@patch(f"{TARGET_MODULE}.OpenAiAnalyzer.query_openai")
-def test_analyze_invalid_json(mock_query_openai, analyzer):
-    mock_query_openai.return_value = "Invalid JSON"
+@patch(f"{TARGET_MODULE}.OpenAiAnalyzer.query_llm")
+def test_analyze_invalid_json(mock_query_llm, analyzer):
+    mock_query_llm.return_value = "Invalid JSON"
 
     content = TEST_CONTENT
     analysis_result = analyzer.analyze(content)
@@ -78,9 +78,9 @@ def test_analyze_invalid_json(mock_query_openai, analyzer):
     assert "not a valid json string" in analysis_result.analysis_error
 
 
-@patch(f"{TARGET_MODULE}.OpenAiAnalyzer.query_openai")
-def test_analyze_schema_validation_failure(mock_query_openai, analyzer):
-    mock_query_openai.return_value = '{"invalid_key": "value"}'
+@patch(f"{TARGET_MODULE}.OpenAiAnalyzer.query_llm")
+def test_analyze_schema_validation_failure(mock_query_llm, analyzer):
+    mock_query_llm.return_value = '{"invalid_key": "value"}'
 
     content = TEST_CONTENT
     analysis_result = analyzer.analyze(content)
