@@ -178,3 +178,4 @@ celebrities.csv
 .openai_key
 *.session
 poetry.lock
+.vscode/*
