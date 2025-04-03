@@ -30,7 +30,8 @@ def test_scrape_multiple():
     results = {}
     for url, result in scraper.scrape_multiple(urls):
         results[url] = result
-        
+    
+    assert len(results) == len(urls)
     assert set(results.keys()) == set(urls)
     for url in urls:
         assert results[url].link == url
