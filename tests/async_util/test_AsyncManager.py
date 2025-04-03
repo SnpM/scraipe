@@ -46,27 +46,28 @@ def test_run_multiple_success_main_thread():
         lambda: async_double(5,.5),
         lambda: async_double(10,.5),
     ]
+    n = 50
+    tasks *= n
     t = Timer()
     results = list(AsyncManager.run_multiple(tasks))
     elapsed = t.end()
-    assert sorted(results) == [4, 6, 10, 20]
+    assert sorted(results) == sorted([4, 6, 10, 20] * n)
     assert elapsed < .6, f"Elapsed time {elapsed} exceeded expected threshold"
     AsyncManager.disable_multithreading()
 
 def test_run_multiple_success_multithreading():
-    AsyncManager.enable_multithreading(max_workers=3)
+    AsyncManager.enable_multithreading(max_workers=10)
     
     tasks = [
         lambda: async_double(2,.5),
         lambda: async_double(3,.5),
         lambda: async_double(5,.5),
     ]
-    n=30
+    n=100
     tasks *= n
     t = Timer()
     results = list(AsyncManager.run_multiple(tasks))
     elapsed = t.end()
-    print(f"Elapsed time: {elapsed}")
     assert sorted(results) == sorted([4, 6, 10] * n)
     assert elapsed < .6, f"Elapsed time {elapsed} exceeded expected threshold"
     AsyncManager.disable_multithreading()

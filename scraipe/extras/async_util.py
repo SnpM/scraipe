@@ -85,7 +85,7 @@ class EventLoopPoolExecutor:
         with self._lock:
             # Choose the loop with the fewest pending tasks.
             index = min(range(self.num_loops), key=lambda i: self.pending_tasks[i])
-            self.pending_tasks[index] += 1
+            self.pending_tasks[index] += 1 
             return self.event_loops[index], index
 
     def _decrement_pending(self, index: int) -> None:
@@ -184,17 +184,25 @@ class AsyncManager:
             # Signal that all tasks are complete.
             result_queue.put(DONE)
             
-        # Start the producer coroutine in a separate thread.        
-        threading.Thread(target=lambda: AsyncManager.run(producer), daemon=True).start()
+        # Start the producer coroutine
+        AsyncManager._executor.run(producer)
 
         # Yield results until all tasks are complete.
-        while True:
-            time.sleep(0.01)
-            result = result_queue.get()
-            if result is DONE:
-                break
-            yield result    
-        
+        POLL_INTERVAL = 0.01  # seconds
+        done = False
+        while not done:
+            # Sleep briefly to avoid busy waiting.
+            time.sleep(POLL_INTERVAL)
+            while not result_queue.empty():
+                result = result_queue.get()
+                # Check for the sentinel value indicating completion.
+                if result is DONE:
+                    done = True
+                    assert result_queue.empty(), "Queue should be empty after DONE is received."
+                    break
+                yield result  
+
+                      
     @staticmethod
     def set_executor(executor: IAsyncExecutor) -> None:
         """
