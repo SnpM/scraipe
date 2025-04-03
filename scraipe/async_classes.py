@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from typing import Generator, Tuple
-from scraipe.classes import IScraper, ScrapeResult
+from scraipe.classes import IScraper, ScrapeResult, IAnalyzer, AnalysisResult
 from scraipe.async_util import AsyncManager
 
 class AsyncScraperBase(IScraper):
@@ -31,7 +31,8 @@ class AsyncScraperBase(IScraper):
     
     def scrape_multiple(self, urls) -> Generator[Tuple[str, ScrapeResult], None, None]:
         """
-        Asynchronously scrape multiple URLs and yield results. Blocks until all results are available.
+        Asynchronously scrape multiple URLs and yield results in synchronous context.
+        Blocks while waiting for results.
         
         Args:
             urls (list): A list of URLs to scrape.
@@ -46,3 +47,40 @@ class AsyncScraperBase(IScraper):
         tasks = [make_task(url) for url in urls]
         for result in AsyncManager.run_multiple(tasks):
             yield result
+            
+            
+
+class AsyncAnalyzerBase(IAnalyzer):
+    @abstractmethod
+    async def async_analyze(self, content: str) -> AnalysisResult:
+        """
+        Asynchronously analyze the given content.
+
+        Args:
+            content (str): The content to analyze.
+
+        Returns:
+            AnalysisResult: The result of the analysis.
+        """
+        raise NotImplementedError("Subclasses must implement this method.")
+
+    def analyze(self, content: str) -> AnalysisResult:
+        """
+        Synchronously analyze the given content. Wraps async_analyze().
+
+        Args:
+            content (str): The content to analyze.
+
+        Returns:
+            AnalysisResult: The result of the analysis.
+        """
+        return AsyncManager.run(self.async_analyze, content)
+    
+    def analyze_multiple(self, contents: dict) -> "Generator[Tuple[str, AnalysisResult], None, None]":
+        # Create an async task for each content and yield (link, AnalysisResult)
+        def make_task(link, content):
+            async def task():
+                return link, await self.async_analyze(content)
+            return task
+        tasks = [make_task(link, content) for link, content in contents.items()]
+        return AsyncManager.run_multiple(tasks)
