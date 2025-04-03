@@ -5,6 +5,8 @@ from pydantic import BaseModel
 
 @final
 class ScrapeResult(BaseModel):
+    
+    # Note: It's recommended to use success() and fail() methods to create instances of ScrapeResult.
     link:str
     content:str = None
     scrape_success:bool

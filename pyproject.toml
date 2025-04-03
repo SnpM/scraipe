@@ -27,3 +27,6 @@ extras = ["telethon", "trafilatura", "openai", "python-dotenv", "nest_asyncio"]
 [tool.poetry.group.dev.dependencies]
 pytest = "*"
 asdftimer = "*"
+pytest-asyncio = "*"
+pytest-cov = "*"
+pytest-mock = "*"
