@@ -2,7 +2,6 @@ from abc import abstractmethod
 from typing import Generator, Tuple
 from scraipe.classes import IScraper, ScrapeResult
 from scraipe.extras.async_util import AsyncManager
-import asyncio
 
 class AsyncScraperBase(IScraper):
     @abstractmethod
