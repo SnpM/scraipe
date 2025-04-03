@@ -3,9 +3,10 @@ import requests
 from bs4 import BeautifulSoup
 from telethon import TelegramClient
 import re
-import asyncio
+from scraipe.extras.async_classes import AsyncScraperBase
+from scraipe.extras.async_util import AsyncManager
 
-class TelegramScraper(IScraper):
+class TelegramScraper(AsyncScraperBase):
     """A scraper that uses the telethon library to pull the contents of telegram messages."""
     client: TelegramClient
     DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
@@ -14,6 +15,7 @@ class TelegramScraper(IScraper):
         self.client.start(phone_number)
         
     async def _get_telegram_content(self, chat_name:str, message_id:int):
+        AsyncManager.disable_multithreading()
         await self.client.connect()
         # Search for entity
         try:
@@ -32,7 +34,7 @@ class TelegramScraper(IScraper):
             raise Exception(f"Failed to get message {message_id} from {chat_name}: {e}")
         return message.message
 
-    def scrape(self, url: str) -> ScrapeResult:  # Make scrape an async method
+    async def async_scrape(self, url: str) -> ScrapeResult:  # Make scrape an async method
         if not url.startswith("https://t.me/"):
             return ScrapeResult(link=url, scrape_success=False, scrape_error=f"URL {url} is not a telegram link.")
         # Extract the username and message id
@@ -47,7 +49,7 @@ class TelegramScraper(IScraper):
             raise ValueError(f"Failed to convert message id {message_id} to int.")
         # Run async function
         try:
-            content = asyncio.get_event_loop().run_until_complete(self._get_telegram_content(username, message_id))
+            content = await self._get_telegram_content(username, message_id)
         except Exception as e:
             return ScrapeResult(link=url, scrape_success=False, scrape_error=f"Failed to scrape {url}. Error: {e}")
         
@@ -55,4 +57,3 @@ class TelegramScraper(IScraper):
     
     def disconnect(self):
         self.client.disconnect()
-    
