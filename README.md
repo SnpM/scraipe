@@ -6,7 +6,7 @@ Scraipe is a high performance asynchronous scraping and analysis framework that 
 
 Ensure you have Python 3.10+ installed. Install Scraipe with all built-in scrapers/analyzers:
 ```bash
-pip install scraipe[extras]
+pip install scraipe[extended]
 ```
 
 Alternatively, install the core library and develop your own scrapers/analyzers with:
@@ -29,7 +29,7 @@ pip install scraipe
    - Import the required modules:
    ```python
    from scraipe import Workflow
-   from scraipe.extras import NewsScraper, OpenAiAnalyzer
+   from scraipe.extended import NewsScraper, OpenAiAnalyzer
    ```
    
 2. **Configure Scraper and Analyzer:**
