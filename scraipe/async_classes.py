@@ -12,7 +12,7 @@ class IAsyncScraper(IScraper):
     max_workers:int = 10
     def __init__(self, max_workers: int=10):
         """
-        Initialize the AsyncScraperBase with a maximum number of concurrent workers.
+        Initialize the IAsyncScraperBase with a maximum number of concurrent workers.
         
         Args:
             max_workers (int): The maximum number of concurrent workers.
@@ -68,7 +68,7 @@ class IAsyncAnalyzer(IAnalyzer):
     max_workers:int = 10
     def __init__(self, max_workers: int = 10):
         """
-        Initialize the AsyncAnalyzerBase with a maximum number of concurrent workers.
+        Initialize the IAsyncAnalyzer with a maximum number of concurrent workers.
         
         Args:
             max_workers (int): The maximum number of concurrent workers.
