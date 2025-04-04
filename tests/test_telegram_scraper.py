@@ -1,9 +1,9 @@
 import pytest
-from scraipe.extended.telegram_scraper import TelegramScraper
+from scraipe.extended.telegram_scraper import TelegramMessageScraper
 from scraipe.classes import ScrapeResult
 from unittest.mock import AsyncMock, patch, MagicMock
 
-TARGET_MODULE = TelegramScraper.__module__
+TARGET_MODULE = TelegramMessageScraper.__module__
 
 TEST_URL = "https://t.me/TelegramTips/515"
 
@@ -18,7 +18,7 @@ def live_scraper():
     phone_number = os.environ.get("TELEGRAM_PHONE_NUMBER")
     if not all([name, api_id, api_hash, phone_number]):
         pytest.skip("Live scraper credentials are not set in the environment.")
-    scraper =  TelegramScraper(name, api_id, api_hash, phone_number)
+    scraper =  TelegramMessageScraper(name, api_id, api_hash, phone_number)
     yield scraper
     scraper.disconnect()
 
@@ -32,7 +32,7 @@ def mock_scraper():
         mock_client.start = AsyncMock()
         mock_client.get_chat = AsyncMock()
         mock_client.get_messages = AsyncMock()
-        scraper = TelegramScraper("mock_name", "mock_api_id", "mock_api_hash", "mock_phone_number")
+        scraper = TelegramMessageScraper("mock_name", "mock_api_id", "mock_api_hash", "mock_phone_number")
         scraper.client = mock_client
         yield scraper
         scraper.disconnect()
