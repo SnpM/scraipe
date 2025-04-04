@@ -1,5 +1,5 @@
 import pytest
-from scraipe.extended.telegram_scraper import TelegramMessageScraper
+from scraipe.extended.telegram_message_scraper import TelegramMessageScraper
 from scraipe.classes import ScrapeResult
 from unittest.mock import AsyncMock, patch, MagicMock
 
