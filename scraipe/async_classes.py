@@ -4,6 +4,12 @@ from scraipe.classes import IScraper, ScrapeResult, IAnalyzer, AnalysisResult
 from scraipe.async_util import AsyncManager
 
 class AsyncScraperBase(IScraper):
+    """
+    Base class for asynchronous scrapers. Implements the IScraper interface.
+    This class provides a synchronous wrapper around the asynchronous scraping method.
+    Subclasses must implement the async_scrape() method.
+    """
+    
     @abstractmethod
     async def async_scrape(self, url: str) -> ScrapeResult:
         """

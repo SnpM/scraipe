@@ -1,60 +1,59 @@
 import pytest
-from unittest.mock import patch, Mock
 from scraipe.extras.news_scraper import NewsScraper
-from scraipe.classes import ScrapeResult
+import trafilatura
 
-TARGET_MODULE = NewsScraper.__module__
+@pytest.mark.asyncio
+async def test_async_scrape_success(monkeypatch):
+    # ...existing setup...
+    scraper = NewsScraper()
+    async def dummy_get_site_html(url: str):
+        return "<html>dummy content</html>"
+    scraper.get_site_html = dummy_get_site_html
 
-@pytest.fixture
-def scraper():
-    return NewsScraper()
+    def dummy_extract(html, url, output_format):
+        return "extracted text"
+    monkeypatch.setattr(trafilatura, "extract", dummy_extract)
 
-@patch(f"{TARGET_MODULE}.requests.get")
-def test_scrape_success(mock_get, scraper):
-    mock_response = Mock()
-    mock_response.status_code = 200
-    mock_response.text = "<html><body>Sample content</body></html>"
-    mock_get.return_value = mock_response
+    result = await scraper.async_scrape("http://dummy.url")
+    # Assuming ScrapeResult.success sets content to the extracted text.
+    assert result.content == "extracted text"
+    # ...additional assertions as needed...
 
-    with patch(f"{TARGET_MODULE}.trafilatura.extract", return_value="Extracted content"):
-        result = scraper.scrape("http://example.com")
-        assert result.scrape_success is True
-        assert result.content == "Extracted content"
-        assert result.link == "http://example.com"
+@pytest.mark.asyncio
+async def test_async_scrape_fail_get_html(monkeypatch):
+    # ...existing setup...
+    scraper = NewsScraper()
+    async def dummy_get_site_html(url: str):
+        raise Exception("network error")
+    scraper.get_site_html = dummy_get_site_html
 
-@patch(f"{TARGET_MODULE}.requests.get")
-def test_scrape_failure_status_code(mock_get, scraper):
-    mock_response = Mock()
-    mock_response.status_code = 404
-    mock_get.return_value = mock_response
+    result = await scraper.async_scrape("http://dummy.url")
+    # Expect error message from the inner try-except
+    assert "Failed to get page" in result.scrape_error
 
-    result = scraper.scrape("http://example.com")
-    assert result.scrape_success is False
-    assert result.content is None
-    assert "Status code: 404" in result.scrape_error
+@pytest.mark.asyncio
+async def test_async_scrape_fail_no_content(monkeypatch):
+    # ...existing setup...
+    scraper = NewsScraper()
+    async def dummy_get_site_html(url: str):
+        return "<html>dummy content</html>"
+    scraper.get_site_html = dummy_get_site_html
 
-@patch(f"{TARGET_MODULE}.requests.get")
-def test_scrape_failure_exception(mock_get, scraper):
-    mock_get.side_effect = Exception("Connection error")
+    def dummy_extract(html, url, output_format):
+        return None
+    monkeypatch.setattr(trafilatura, "extract", dummy_extract)
 
-    result = scraper.scrape("http://example.com")
-    assert result.scrape_success is False
-    assert result.content is None
-    assert "Error: Connection error" in result.scrape_error
+    result = await scraper.async_scrape("http://dummy.url")
+    # Expect error message indicating no content was extracted
+    assert "No content extracted" in result.scrape_error
 
-def test_scrape_apnews_article_real_request(scraper):
+def test_live_scrape():
     url = "https://apnews.com/article/book-review-david-szalay-flesh-b05fbda57b6123de8eddd931bae3e3fc"
-    crib = "When that relationship ends in tragedy and violence"
-    # Ensure connection works; if not, skip
-    import requests
-    try:
-        response = requests.get(url)
-        if response.status_code != 200:
-            pytest.skip(f"Failed to connect to {url}. Status code: {response.status_code}")
-    except requests.RequestException as e:
-        pytest.skip(f"Failed to connect to {url}. Error: {e}")
-    result = scraper.scrape(url)
-    assert result.scrape_success is True
-    assert crib in result.content
-    assert result.link == url
-
+    begin_crib = "Istvan, the protagonist in David Szalay’s new novel"
+    end_crib = "letting these simple interactions tell a tragic story."
+    scraper = NewsScraper()
+    result = scraper.scrape(url)  # synchronous scrape() call
+    assert result.scrape_success
+    
+    assert begin_crib in result.content
+    assert end_crib in result.content

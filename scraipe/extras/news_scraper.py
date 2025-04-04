@@ -1,32 +1,42 @@
-from scraipe.classes import IScraper, ScrapeResult
-import requests
-from bs4 import BeautifulSoup
-
+import aiohttp
 import trafilatura
+from scraipe.classes import ScrapeResult
+from scraipe.async_classes import AsyncScraperBase
 
-class NewsScraper(IScraper):
-    """A scraper that uses the newspaper3k library to extract article content."""
-    DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
+class NewsScraper(AsyncScraperBase):
+    """A scraper that uses aiohttp and trafilatura to extract article content."""
+    DEFAULT_USER_AGENT = (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/58.0.3029.110 Safari/537.36"
+    )
+
     def __init__(self, headers=None):
         self.headers = headers or {"User-Agent": NewsScraper.DEFAULT_USER_AGENT}
-    
-    def scrape(self, url:str)->ScrapeResult:
+        
+    async def get_site_html(self, url: str):
+        """Get HTTP response using aiohttp."""
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            async with session.get(url) as response:
+                if response.status != 200:
+                    raise Exception(f"Failed to scrape {url}. Status code: {response.status}")
+                return await response.text()
+
+    async def async_scrape(self, url: str) -> ScrapeResult:
         try:
-            response = requests.get(url, headers=self.headers)
-            if response.status_code != 200:
-                return ScrapeResult(
-                    link=url,
-                    scrape_success=False, 
-                    scrape_error=f"Failed to scrape {url}. Status code: {response.status_code}")
-            html = response.text
+            try:
+                html = await self.get_site_html(url)
+            except Exception as e:
+                return ScrapeResult.fail(url,f"Failed to get page: {e}")
             
             content = trafilatura.extract(
-                html, 
+                html,
                 url=url,
-                output_format="txt")
-            
+                output_format="txt"
+            )
             if not content:
-                return ScrapeResult(link=url, scrape_success=False, scrape_error=f"Failed to news from {url}. No content found.")
-            return ScrapeResult(link=url, content=content, scrape_success=True)
+                return ScrapeResult.fail(url,f"No content extracted from {url}."
+                )
+            return ScrapeResult.success(url,content)
         except Exception as e:
-            return ScrapeResult(link=url,scrape_success=False, scrape_error=f"Failed to scrape {url}. Error: {e}")
+            return ScrapeResult.fail(url,f"Exception while scraping {url}: {e}")
