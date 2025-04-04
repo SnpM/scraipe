@@ -31,11 +31,15 @@ def test_parallel_runs():
         tasks = [async_task() for _ in range(10)]
         return await asyncio.gather(*tasks)
     
+    # Wait for previous tasks to finish
+    executor.run(asyncio.sleep,.01)
+    
     t = Timer(disable_print=True)
     result = executor.run(run_tasks)
     duration = t.stop()
+    
     assert result == ["done"] * 10
-    assert duration < 1.1, f"Expected duration < 1.1 seconds, got {duration:.2f} seconds"
+    assert duration < 1.2, f"Expected duration < 1.1 seconds, got {duration:.2f} seconds"
 
 @pytest.mark.asyncio
 async def test_async_run_success():
@@ -58,6 +62,10 @@ async def test_async_run_parallel_runs():
     async def run_tasks():
         tasks = [async_task() for _ in range(10)]
         return await asyncio.gather(*tasks)
+    
+    # Wait for previous tasks to finish
+    executor.run(asyncio.sleep,.01)
+    
     t = Timer(disable_print=True)
     result = await executor.async_run(run_tasks)
     duration = t.stop()

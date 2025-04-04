@@ -35,6 +35,9 @@ def test_parallel_runs():
         tasks = [async_task() for _ in range(n)]
         return await asyncio.gather(*tasks)
     
+    # Wait for previous tasks to finish
+    executor.run(asyncio.sleep,.01)
+    
     t = Timer(disable_print=True)
     result = executor.run(run_tasks)
     duration = t.stop()
@@ -67,6 +70,10 @@ async def test_async_run_parallel_runs():
     async def run_tasks():
         tasks = [async_task() for _ in range(n)]
         return await asyncio.gather(*tasks)
+    
+    # Wait for previous tasks to finish
+    executor.run(asyncio.sleep,.01)
+    
     t = Timer(disable_print=True)
     result = await executor.async_run(run_tasks)
     duration = t.stop()

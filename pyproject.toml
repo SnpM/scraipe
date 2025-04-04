@@ -36,3 +36,4 @@ asdftimer = "*"
 pytest-asyncio = "*"
 pytest-cov = "*"
 pytest-mock = "*"
+aioresponses
