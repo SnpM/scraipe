@@ -1,80 +1,61 @@
 import os
 import pytest
+import asyncio
 from scraipe.extras import MultiScraper
 from scraipe.extras import TelegramScraper
 from scraipe.classes import ScrapeResult
+from scraipe.extras.multi_scraper import MultiScraper
 from unittest.mock import MagicMock
 
 
 TEST_TELEGRAM_URL = "https://t.me/TelegramTips/516"
 
-@pytest.fixture
-def mock_telegram_scraper():
-    # Attempt to create a live Telegram scraper
-    name = os.environ.get("TELEGRAM_NAME")
-    api_id = os.environ.get("TELEGRAM_API_ID")
-    api_hash = os.environ.get("TELEGRAM_API_HASH")
-    phone_number = os.environ.get("TELEGRAM_PHONE_NUMBER")
+# Dummy scrapers for testing
+class DummyTelegramScraper:
+    async def async_scrape(self, url: str) -> ScrapeResult:
+        return ScrapeResult.success(link=url, content="telegram content")
 
-    if all([name, api_id, api_hash, phone_number]):
-        try:
-            scraper = TelegramScraper(name, api_id, api_hash, phone_number)
-            yield scraper
-            scraper.disconnect()
-            return
-        except Exception as e:
-            print(f"Failed to create live Telegram scraper: {e}")
+class DummyNewsScraperSuccess:
+    async def async_scrape(self, url: str) -> ScrapeResult:
+        return ScrapeResult.success(link=url, content="news content")
 
-    # Fallback to mock scraper
-    class MockTelegramScraper:
-        def scrape(self, url):
-            if "valid" in url:
-                return ScrapeResult(link=url, scrape_success=True, content="Mocked Telegram content")
-            return ScrapeResult(link=url, scrape_success=False, scrape_error="Invalid Telegram link")
+class DummyNewsScraperFail:
+    async def async_scrape(self, url: str) -> ScrapeResult:
+        return ScrapeResult.fail(link=url, error="news scrape failed")
+
+class DummyDefaultScraper:
+    async def async_scrape(self, url: str) -> ScrapeResult:
+        return ScrapeResult.success(link=url, content="default content")
+
+@pytest.mark.asyncio
+async def test_telegram_scrape_success():
+    scraper = MultiScraper(telegram_scraper=DummyTelegramScraper())
+    result = await scraper.async_scrape("https://t.me/somechannel")
+    # Expect telegram branch to return success
+    assert result.scrape_success
+    assert result.content == "telegram content"
+
+@pytest.mark.asyncio
+async def test_telegram_scrape_failure():
+    # No telegram scraper provided, so telegram branch should return failure.
+    scraper = MultiScraper()
+    result = await scraper.async_scrape("https://t.me/somechannel")
+    assert not result.scrape_success
+    assert result.scrape_error == "Telegram scraper not configured."
+
+@pytest.mark.asyncio
+async def test_news_scrape_success():
+    # Provide a news scraper that succeeds.
+    scraper = MultiScraper(telegram_scraper=DummyTelegramScraper(), news_scraper=DummyNewsScraperSuccess())
+    result = await scraper.async_scrape("https://news.example.com/article")
+    assert result.scrape_success
+    assert result.content == "news content"
+
+@pytest.mark.asyncio
+async def test_default_scrape_fallback():
+    # When news scraping fails, default scraper should be used.
+    scraper = MultiScraper(news_scraper=DummyNewsScraperFail(), default_scraper=DummyDefaultScraper())
+    result = await scraper.async_scrape("https://example.com/page")
+    assert result.scrape_success
+    assert result.content == "default content"
     
-    yield MockTelegramScraper()
-
-@pytest.fixture
-def mock_news_scraper():
-    class MockNewsScraper:
-        def scrape(self, url):
-            if "news" in url:
-                return ScrapeResult(link=url, scrape_success=True, content="News content")
-            return ScrapeResult(link=url, scrape_success=False, scrape_error="Not a news link")
-    return MockNewsScraper()
-
-@pytest.fixture
-def mock_default_scraper():
-    class MockDefaultScraper:
-        def scrape(self, url):
-            return ScrapeResult(link=url, scrape_success=True, content="Default content")
-    return MockDefaultScraper()
-
-@pytest.fixture
-def multi_scraper(mock_telegram_scraper, mock_news_scraper, mock_default_scraper):
-    return MultiScraper(
-        telegram_scraper=mock_telegram_scraper,
-        news_scraper=mock_news_scraper,
-        default_scraper=mock_default_scraper
-    )
-
-def test_telegram_scraper(multi_scraper):
-    if isinstance(multi_scraper.telegram_scraper, TelegramScraper):
-        url = TEST_TELEGRAM_URL
-    else:
-        url = "https://t.me/valid"
-    result = multi_scraper.scrape(url)
-    assert result.scrape_success
-    assert len(result.content) > 0
-
-def test_news_scraper(multi_scraper):
-    url = "https://example.com/news"
-    result = multi_scraper.scrape(url)
-    assert result.scrape_success
-    assert result.content == "News content"
-
-def test_default_scraper(multi_scraper):
-    url = "https://example.com/other"
-    result = multi_scraper.scrape(url)
-    assert result.scrape_success
-    assert result.content == "Default content"
