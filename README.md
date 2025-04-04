@@ -4,16 +4,24 @@ Scraipe is a high performance asynchronous scraping and analysis framework that 
 
 ## Installation
 
-Ensure you have Python 3.10+ installed. Install Scraipe with powerful scrapers and analyzers:
+Ensure you have Python 3.10+ installed. Install Scraipe with all built-in scrapers/analyzers:
 ```bash
 pip install scraipe[extras]
 ```
 
+Alternatively, install the core library and develop your own scrapers/analyzers with:
+```bash
+pip install scraipe
+```
+
 ## Features
-- **High Performance**: IO-bound tasks such as scraping and querying LLMs are fully asynchronous under the hood.
-- **Custom Scraping**: Scraipe comes with 
-- **LLM Analysis:** Process text using OpenAI’s API with built-in validation via Pydantic.
-- **Workflow Management:** Combine scraping and analysis in a single workflow--ideal for work in Jupyter notebooks.
+- **Versatile Scraping**: Leverage custom scrapers that handle Telegram messages, news articles, and links that require multiple ingress rules.
+- **LLM Analysis:** Process text using OpenAI models with built-in Pydantic validation.
+- **Workflow Management:** Combine scraping and analysis in a single fault-tolerant workflow--ideal for Jupyter notebooks.
+- **High Performance**: Asynchronous IO-bound tasks are seamlessly integrated in the synchronous API.
+- **Modular**: Extend the framework with new scrapers or analyzers as your data sources evolve.
+- **Customizable Ingress**: Easily define and update rules to route different types of links to their appropriate scrapers.
+- **Detailed Logging**: Monitor scraping and analysis operations through comprehensive logging for improved debugging and transparency.
 
 ## Usage Example
 
@@ -34,7 +42,7 @@ pip install scraipe[extras]
    Extract a list of celebrities mentioned in the article text.
    Return a JSON dictionary with the schema: {"celebrities": ["celebrity1", "celebrity2", ...]}
    '''   
-   analyzer = OpenAiAnalyzer("YOUR_OPENAI_API_KEY", instruction, pydantic_schema=ExpectedOutput)
+   analyzer = OpenAiAnalyzer("YOUR_OPENAI_API_KEY", instruction)
    ```
    
 3. **Use the Workflow:**
