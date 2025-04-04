@@ -10,37 +10,41 @@ import asyncio
 # Base interface for asynchronous executors.
 class IAsyncExecutor:
     @abstractmethod
-    def submit(self, async_func: Callable[..., Awaitable[Any]], *args, **kwargs) -> Future:
+    def submit(self, coro: Awaitable[Any]) -> Future:
+        """
+        Submit a coroutine to the executor.
+
+        Args:
+            coro: The coroutine to execute.
+
+        Returns:
+            A Future object representing the execution of the coroutine.
+        """
         raise NotImplementedError("Must be implemented by subclasses.")
     
-    def run(self, async_func: Callable[..., Awaitable[Any]], *args, **kwargs) -> Any:
+    def run(self, coro: Awaitable[Any]) -> Any:
         """
-        Run an asynchronous function in the executor and block until it completes.
+        Run a coroutine in the executor and block until it completes.
         
         Args:
-            async_func: The asynchronous function to execute.
-            *args: Positional arguments for the function.
-            **kwargs: Keyword arguments for the function.
+            coro: The coroutine to execute.
         
         Returns:
-            The result of the asynchronous function.
+            The result of the coroutine.
         """
-        return self.submit(async_func, *args, **kwargs).result()
+        return self.submit(coro).result()
     
-    async def async_run(self, async_func: Callable[..., Awaitable[Any]], *args, **kwargs) -> Any:
+    async def async_run(self, coro: Awaitable[Any]) -> Any:
         """
-        Run an asynchronous function in the executor and return its result.
+        Run a coroutine in the executor and return its result.
         
         Args:
-            async_func: The asynchronous function to execute.
-            *args: Positional arguments for the function.
-            **kwargs: Keyword arguments for the function.
+            coro: The coroutine to execute.
         
         Returns:
-            The result of the asynchronous function.
+            The result of the coroutine.
         """
-        # wrap future
-        future = self.submit(async_func, *args, **kwargs)
+        future = self.submit(coro)
         async_future = asyncio.wrap_future(future)
         return await async_future
     
@@ -59,19 +63,16 @@ class DefaultBackgroundExecutor(IAsyncExecutor):
         self._thread = threading.Thread(target=_start_loop, daemon=True)
         self._thread.start()
         
-    def submit(self, async_func: Callable[..., Awaitable[Any]], *args, **kwargs) -> Future:
+    def submit(self, coro: Awaitable[Any]) -> Future:
         """
-        Submit an asynchronous function to the executor.
+        Submit a coroutine to the executor.
         
         Args:
-            async_func: The asynchronous function to execute.
-            *args: Positional arguments for the function.
-            **kwargs: Keyword arguments for the function.
+            coro: The coroutine to execute.
         
         Returns:
-            A Future object representing the execution of the function.
+            A Future object representing the execution of the coroutine.
         """
-        coro = async_func(*args, **kwargs)
         return asyncio.run_coroutine_threadsafe(coro, self._loop)
     
     def shutdown(self, wait: bool = True) -> None:
@@ -139,11 +140,18 @@ class EventLoopPoolExecutor(IAsyncExecutor):
         with self._lock:
             self.pending_tasks[index] -= 1
             
-    def submit(self, async_func: Callable[..., Awaitable[Any]], *args, **kwargs) -> Future:
+    def submit(self, coro: Awaitable[Any]) -> Future:
+        """
+        Submit a coroutine to the executor.
+        
+        Args:
+            coro: The coroutine to execute.
+        
+        Returns:
+            A Future object representing the execution of the coroutine.
+        """
         loop, index = self.get_event_loop()
-        coro = async_func(*args, **kwargs)
         future = asyncio.run_coroutine_threadsafe(coro, loop)
-        # Decrement the counter when the task completes.
         future.add_done_callback(lambda f: self._decrement_pending(index))
         return future
                 
@@ -172,78 +180,80 @@ class AsyncManager:
     _executor: IAsyncExecutor = DefaultBackgroundExecutor()
 
     @staticmethod
-    def run(async_func: Callable[..., Awaitable[Any]], *args, **kwargs) -> Any:
+    def run(coro: Awaitable[Any]) -> Any:
         """
-        Run the given asynchronous function using the underlying executor.
+        Run the given coroutine using the underlying executor.
+        
+        Args:
+            coro: The coroutine to execute.
+        
+        Returns:
+            The result of the coroutine.
         """
-        return AsyncManager._executor.run(async_func, *args, **kwargs)
+        return AsyncManager._executor.run(coro)
 
     @staticmethod
-    async def async_run_multiple(tasks: List[Callable[..., Awaitable[Any]]], max_workers=10, *args, **kwargs) -> AsyncGenerator[Any, None]:
+    async def async_run(coro: Awaitable[Any]) -> Any:
         """
-        Run multiple asynchronous functions in parallel using the underlying executor.
+        Run the given coroutine using the underlying executor asynchronously.
+        
+        Args:
+            coro: The coroutine to execute.
+        
+        Returns:
+            The result of the coroutine.
+        """
+        return await AsyncManager._executor.async_run(coro)
+
+    @staticmethod
+    async def async_run_multiple(tasks: List[Awaitable[Any]], max_workers=10) -> AsyncGenerator[Any, None]:
+        """
+        Run multiple coroutines in parallel using the underlying executor.
         Limits the number of concurrent tasks to max_workers.
         """
-        
-        assert max_workers > 0, "max_workers must be greater than 0"        
-        
-        
-        # Create a semaphore to limit concurrent tasks.
+        assert max_workers > 0, "max_workers must be greater than 0"
         semaphore = asyncio.Semaphore(max_workers)
-
         
-        async def sem_task(task: Callable[..., Awaitable[Any]], sem:asyncio.Semaphore) -> Any:
+        async def run(coro: Awaitable[Any], sem: asyncio.Semaphore) -> Any:
             async with sem:
-                # Submit the task to the executor and wait for its result.
-                result = await AsyncManager._executor.async_run(task, *args, **kwargs)
+                result = await AsyncManager._executor.async_run(coro)
                 return result
                 
-        coros = [sem_task(task, semaphore) for task in tasks]
+        coros = [run(task, semaphore) for task in tasks]
         for completed in asyncio.as_completed(coros):
             yield await completed
 
     @staticmethod
-    def run_multiple(tasks: List[Callable[..., Awaitable[Any]]], max_workers=10, *args, **kwargs) -> Generator[Any, None, None]:
+    def run_multiple(tasks: List[Awaitable[Any]], max_workers=10) -> Generator[Any, None, None]:
         """
-        Run multiple asynchronous functions in parallel using the underlying executor. 
+        Run multiple coroutines in parallel using the underlying executor.
         Block calling thread and yield results as they complete.
         
         Args:
-            tasks: A list of asynchronous functions to run.
+            tasks: A list of coroutines to run.
             max_workers: The maximum number of concurrent tasks.
-            *args: Positional arguments for the functions.
-            **kwargs: Keyword arguments for the functions.
         """
         DONE = object()  # Sentinel value to indicate completion
-        # Create a queue to hold results.
         result_queue: Queue = Queue()
 
         async def producer() -> None:
-            async for result in AsyncManager.async_run_multiple(tasks, max_workers=max_workers, *args, **kwargs):
-                # Put each result into the queue.
+            async for result in AsyncManager.async_run_multiple(tasks, max_workers=max_workers):
                 result_queue.put(result)
-            # Signal that all tasks are complete.
             result_queue.put(DONE)
-            
-        # Start the producer coroutine
-        AsyncManager._executor.submit(producer)
+        
+        AsyncManager._executor.submit(producer())
 
-        # Yield results until all tasks are complete.
         POLL_INTERVAL = 0.01  # seconds
         done = False
         while not done:
-            # Sleep briefly to avoid busy waiting.
             time.sleep(POLL_INTERVAL)
             while not result_queue.empty():
                 result = result_queue.get()
-                # Check for the sentinel value indicating completion.
                 if result is DONE:
                     done = True
-                    assert result_queue.empty(), "Queue should be empty after DONE is received."
                     break
                 yield result  
 
-                      
     @staticmethod
     def set_executor(executor: IAsyncExecutor) -> None:
         """

@@ -13,14 +13,14 @@ async def failing_async_function():
 
 def test_success():
     executor = EventLoopPoolExecutor()
-    result = executor.run(successful_async_function, 5, 7)
+    result = executor.run(successful_async_function(5, 7))
     assert result == 12
     executor.shutdown(wait=True)
 
 def test_exception():
     executor = EventLoopPoolExecutor()
     with pytest.raises(ValueError, match='Test exception'):
-        executor.run(failing_async_function)
+        executor.run(failing_async_function())
     executor.shutdown(wait=True)
 
 def test_parallel_runs():
@@ -36,10 +36,10 @@ def test_parallel_runs():
         return await asyncio.gather(*tasks)
     
     # Wait for previous tasks to finish
-    executor.run(asyncio.sleep,.01)
+    executor.run(asyncio.sleep(0.01))
     
     t = Timer(disable_print=True)
-    result = executor.run(run_tasks)
+    result = executor.run(run_tasks())
     duration = t.stop()
     executor.shutdown(wait=True)
     assert result == ["done"] * n
@@ -48,7 +48,7 @@ def test_parallel_runs():
 @pytest.mark.asyncio
 async def test_async_run_success():
     executor = EventLoopPoolExecutor()
-    result = await executor.async_run(successful_async_function, 5, 7)
+    result = await executor.async_run(successful_async_function(5, 7))
     assert result == 12
     executor.shutdown(wait=True)
 
@@ -56,7 +56,7 @@ async def test_async_run_success():
 async def test_async_run_exception():
     executor = EventLoopPoolExecutor()
     with pytest.raises(ValueError, match='Test exception'):
-        await executor.async_run(failing_async_function)
+        await executor.async_run(failing_async_function())
     executor.shutdown(wait=True)
 
 @pytest.mark.asyncio
@@ -72,10 +72,10 @@ async def test_async_run_parallel_runs():
         return await asyncio.gather(*tasks)
     
     # Wait for previous tasks to finish
-    executor.run(asyncio.sleep,.01)
+    executor.run(asyncio.sleep(0.01))
     
     t = Timer(disable_print=True)
-    result = await executor.async_run(run_tasks)
+    result = await executor.async_run(run_tasks())
     duration = t.stop()
     executor.shutdown(wait=True)
     assert result == ["done"] * n
