@@ -52,6 +52,10 @@ def test_run_multiple_success_main_thread():
     ]
     n = 50
     tasks *= n
+    
+    # Wait for previous tasks to finish
+    AsyncManager.run(asyncio.sleep,.01)
+    
     t = Timer()
     results = list(AsyncManager.run_multiple(tasks,max_workers=1000))
     t.stop()
@@ -69,6 +73,10 @@ def test_run_multiple_success_multithreading():
     ]
     n=5
     tasks *= n
+    
+    # Wait for previous tasks to finish
+    AsyncManager.run(asyncio.sleep,.01)
+    
     t = Timer()
     results = list(AsyncManager.run_multiple(tasks,max_workers=10000))
     elapsed = t.stop()
@@ -105,6 +113,8 @@ def test_progressive_yields_multithreaded():
         lambda: async_sleep(.75),
         lambda: async_sleep(1),
     ]
+    # Wait for previous tasks to finish
+    AsyncManager.run(asyncio.sleep,.01)
     
     # Measure the time for each task to complete
     t = Timer()

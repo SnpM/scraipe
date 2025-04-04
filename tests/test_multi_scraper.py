@@ -1,61 +1,71 @@
-import os
-import pytest
+import re
 import asyncio
-from scraipe.extras import MultiScraper
-from scraipe.extras import TelegramScraper
-from scraipe.classes import ScrapeResult
-from scraipe.extras.multi_scraper import MultiScraper
-from unittest.mock import MagicMock
+import unittest
 
+from scraipe.extras.multi_scraper import MultiScraper, IngressRule
+from scraipe.classes import IScraper, ScrapeResult
 
-TEST_TELEGRAM_URL = "https://t.me/TelegramTips/516"
+# Dummy ScrapeResult for testing purposes
+class DummyScrapeResult:
+    def __init__(self, url, scrape_success, scrape_error, data):
+        self.url = url
+        self.scrape_success = scrape_success
+        self.scrape_error = scrape_error
+        self.data = data
+    @classmethod
+    def fail(cls, url, message):
+        return cls(url, False, message, None)
 
-# Dummy scrapers for testing
-class DummyTelegramScraper:
-    async def async_scrape(self, url: str) -> ScrapeResult:
-        return ScrapeResult.success(link=url, content="telegram content")
+# Dummy scraper that always succeeds
+class DummySuccessScraper(IScraper):
+    def scrape(self, url: str):
+        return DummyScrapeResult(url, True, "", "success")
+    def __str__(self):
+        return "DummySuccessScraper"
 
-class DummyNewsScraperSuccess:
-    async def async_scrape(self, url: str) -> ScrapeResult:
-        return ScrapeResult.success(link=url, content="news content")
+# Dummy scraper that always fails
+class DummyFailureScraper(IScraper):
+    def scrape(self, url: str):
+        return DummyScrapeResult(url, False, "failed", None)
+    def __str__(self):
+        return "DummyFailureScraper"
 
-class DummyNewsScraperFail:
-    async def async_scrape(self, url: str) -> ScrapeResult:
-        return ScrapeResult.fail(link=url, error="news scrape failed")
+# Override ScrapeResult for testing if needed
+# (Assuming MultiScraper uses the attributes: scrape_success and scrape_error)
 
-class DummyDefaultScraper:
-    async def async_scrape(self, url: str) -> ScrapeResult:
-        return ScrapeResult.success(link=url, content="default content")
-
-@pytest.mark.asyncio
-async def test_telegram_scrape_success():
-    scraper = MultiScraper(telegram_scraper=DummyTelegramScraper())
-    result = await scraper.async_scrape("https://t.me/somechannel")
-    # Expect telegram branch to return success
-    assert result.scrape_success
-    assert result.content == "telegram content"
-
-@pytest.mark.asyncio
-async def test_telegram_scrape_failure():
-    # No telegram scraper provided, so telegram branch should return failure.
-    scraper = MultiScraper()
-    result = await scraper.async_scrape("https://t.me/somechannel")
-    assert not result.scrape_success
-    assert result.scrape_error == "Telegram scraper not configured."
-
-@pytest.mark.asyncio
-async def test_news_scrape_success():
-    # Provide a news scraper that succeeds.
-    scraper = MultiScraper(telegram_scraper=DummyTelegramScraper(), news_scraper=DummyNewsScraperSuccess())
-    result = await scraper.async_scrape("https://news.example.com/article")
-    assert result.scrape_success
-    assert result.content == "news content"
-
-@pytest.mark.asyncio
-async def test_default_scrape_fallback():
-    # When news scraping fails, default scraper should be used.
-    scraper = MultiScraper(news_scraper=DummyNewsScraperFail(), default_scraper=DummyDefaultScraper())
-    result = await scraper.async_scrape("https://example.com/page")
-    assert result.scrape_success
-    assert result.content == "default content"
+class TestMultiScraper(unittest.TestCase):
+    def test_rule_success(self):
+        # When the URL matches an ingress rule that uses a successful scraper
+        url = "http://example.com/match"
+        rule = IngressRule(re.compile(r"match"), DummySuccessScraper())
+        # Provide a fallback (which should not be used)
+        ms = MultiScraper([rule], fallback_scraper=DummyFailureScraper(), preserve_errors=False)
+        result = asyncio.run(ms.async_scrape(url))
+        self.assertTrue(result.scrape_success)
+        self.assertEqual(result.data, "success")
     
+    def test_fallback_success(self):
+        # When no ingress rule matches, fallback should be used.
+        url = "http://example.com/no-match"
+        # Rule that never matches by using a pattern that does not match the URL
+        rule = IngressRule(re.compile(r"nomatchpattern"), DummyFailureScraper())
+        ms = MultiScraper([rule], fallback_scraper=DummySuccessScraper(), preserve_errors=False)
+        result = asyncio.run(ms.async_scrape(url))
+        self.assertTrue(result.scrape_success)
+        self.assertEqual(result.data, "success")
+    
+    def test_preserve_errors(self):
+        # When all scrapers fail and preserve_errors is True,
+        # the returned error should contain concatenated messages.
+        url = "http://example.com/fail"
+        rule1 = IngressRule(re.compile(r"fail"), DummyFailureScraper())
+        rule2 = IngressRule(re.compile(r"fail"), DummyFailureScraper())
+        ms = MultiScraper([rule1, rule2], fallback_scraper=DummyFailureScraper(), preserve_errors=True, error_delimiter="|")
+        result = asyncio.run(ms.async_scrape(url))
+        self.assertFalse(result.scrape_success)
+        self.assertIn("DummyFailureScraper: failed", result.scrape_error)
+        # Expect errors from all failed attempts (at least two occurrences)
+        self.assertTrue(result.scrape_error.count("DummyFailureScraper: failed") >= 2)
+
+if __name__ == '__main__':
+    unittest.main()
