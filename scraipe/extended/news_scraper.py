@@ -1,9 +1,9 @@
 import aiohttp
 import trafilatura
 from scraipe.classes import ScrapeResult
-from scraipe.async_classes import AsyncScraperBase
+from scraipe.async_classes import IAsyncScraper
 
-class NewsScraper(AsyncScraperBase):
+class NewsScraper(IAsyncScraper):
     """A scraper that uses aiohttp and trafilatura to extract article content."""
     DEFAULT_USER_AGENT = (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "

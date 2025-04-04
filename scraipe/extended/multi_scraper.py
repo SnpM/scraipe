@@ -1,5 +1,5 @@
 from scraipe.classes import IScraper, ScrapeResult
-from scraipe.async_classes import AsyncScraperBase
+from scraipe.async_classes import IAsyncScraper
 
 from typing import List, cast, final
 import re
@@ -41,7 +41,7 @@ class IngressRule():
         ALL = re.compile(r".*")
         """Matches all URLs."""
 
-class MultiScraper(AsyncScraperBase):
+class MultiScraper(IAsyncScraper):
     """A scraper that uses multiple ingress rules to determine how to scrape a link."""
     DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
         
@@ -84,8 +84,8 @@ class MultiScraper(AsyncScraperBase):
         ingress_chain_fails = []        
         def use_scraper(scraper: IScraper) -> ScrapeResult:
             """Use the provided scraper to scrape the URL and save the error message if it fails."""
-            if isinstance(scraper, AsyncScraperBase):
-                async_scraper = cast(AsyncScraperBase, scraper)
+            if isinstance(scraper, IAsyncScraper):
+                async_scraper = cast(IAsyncScraper, scraper)
                 result = async_scraper.async_scrape(url)
             else:
                 result = scraper.scrape(url)

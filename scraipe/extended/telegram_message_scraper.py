@@ -3,10 +3,10 @@ import requests
 from bs4 import BeautifulSoup
 from pyrogram import Client
 import re
-from scraipe.async_classes import AsyncScraperBase
+from scraipe.async_classes import IAsyncScraper
 from scraipe.async_util import AsyncManager
 
-class TelegramMessageScraper(AsyncScraperBase):
+class TelegramMessageScraper(IAsyncScraper):
     """A scraper that uses the pyrogram library to pull the contents of telegram messages."""
     DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
 

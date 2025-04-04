@@ -4,9 +4,9 @@ import json
 from pydantic import BaseModel, ValidationError
 from typing import Type
 from abc import abstractmethod
-from scraipe.async_classes import AsyncAnalyzerBase
+from scraipe.async_classes import IAsyncAnalyzer
 
-class LlmAnalyzerBase(AsyncAnalyzerBase):
+class LlmAnalyzerBase(IAsyncAnalyzer):
     """Base class for LLM analyzers. This class should not be used directly.
     This class provides a common interface for LLM analyzers and handles the common logic for analyzing content using LLMs.
     query_llm() is an abstract method that requires the model to return a json string.

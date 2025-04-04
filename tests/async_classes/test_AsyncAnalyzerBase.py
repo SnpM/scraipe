@@ -1,9 +1,9 @@
 import pytest
 from scraipe.classes import AnalysisResult
-from scraipe.async_classes import AsyncAnalyzerBase
+from scraipe.async_classes import IAsyncAnalyzer
 
 # Dummy subclass with a concrete implementation for testing
-class DummyAnalyzer(AsyncAnalyzerBase):
+class DummyAnalyzer(IAsyncAnalyzer):
     async def async_analyze(self, content: str) -> AnalysisResult:
         # Dummy implementation returning a simple AnalysisResult
         output = {"analysis": f"analysis for {content}"}

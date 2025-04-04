@@ -3,7 +3,7 @@ from typing import Generator, Tuple
 from scraipe.classes import IScraper, ScrapeResult, IAnalyzer, AnalysisResult
 from scraipe.async_util import AsyncManager
 
-class AsyncScraperBase(IScraper):
+class IAsyncScraper(IScraper):
     """
     Base class for asynchronous scrapers. Implements the IScraper interface.
     This class provides a synchronous wrapper around the asynchronous scraping method.
@@ -64,7 +64,7 @@ class AsyncScraperBase(IScraper):
             
             
 
-class AsyncAnalyzerBase(IAnalyzer):
+class IAsyncAnalyzer(IAnalyzer):
     max_workers:int = 10
     def __init__(self, max_workers: int = 10):
         """

@@ -1,10 +1,10 @@
 import asyncio
 import pytest
 from scraipe.classes import ScrapeResult
-from scraipe.async_classes import AsyncScraperBase
+from scraipe.async_classes import IAsyncScraper
 
 # Dummy subclass with a concrete implementation for testing
-class DummyScraper(AsyncScraperBase):
+class DummyScraper(IAsyncScraper):
     async def async_scrape(self, url: str) -> ScrapeResult:
         # Dummy implementation returning a simple ScrapeResult
         return ScrapeResult.success(link=url, content=f"content for {url}")
