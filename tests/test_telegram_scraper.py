@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, patch, MagicMock
 
 TARGET_MODULE = TelegramScraper.__module__
 
-TEST_URL = "https://t.me/TelegramTips/516"
+TEST_URL = "https://t.me/TelegramTips/515"
 
 
 @pytest.fixture
@@ -24,11 +24,13 @@ def live_scraper():
 
 @pytest.fixture
 def mock_scraper():
-    with patch(f"{TARGET_MODULE}.TelegramClient") as MockClient:
+    with patch(TARGET_MODULE + ".Client") as MockClient:
         mock_client = MagicMock()
         MockClient.return_value = mock_client
-        mock_client.connect = AsyncMock()
-        mock_client.get_entity = AsyncMock()
+        mock_client.__aenter__ = AsyncMock(return_value=mock_client)  # added for async context manager
+        mock_client.__aexit__ = AsyncMock(return_value=None)            # added for async context manager
+        mock_client.start = AsyncMock()
+        mock_client.get_chat = AsyncMock()
         mock_client.get_messages = AsyncMock()
         scraper = TelegramScraper("mock_name", "mock_api_id", "mock_api_hash", "mock_phone_number")
         scraper.client = mock_client
@@ -57,15 +59,15 @@ def test_live_scrape_invalid_url(live_scraper):
 def test_live_scrape_nonexistent_message(live_scraper):
     if live_scraper is None:
         pytest.skip("Live scraper credentials are not set in the environment.")
-    url = TEST_URL.replace("516", "1000000")
+    url = TEST_URL.replace("515", "1000000")
     result = live_scraper.scrape(url)
     assert isinstance(result, ScrapeResult)
     assert result.scrape_success == False
     assert result.content is None
 
 def test_mock_scrape_valid_url(mock_scraper):
-    mock_scraper.client.get_entity.return_value = MagicMock(restricted=False)
-    mock_scraper.client.get_messages.return_value = MagicMock(message="Mocked message content")
+    mock_scraper.client.get_chat.return_value = MagicMock(restricted=False)
+    mock_scraper.client.get_messages.return_value.text = "Mocked message content"
     url = "https://t.me/mock_channel/123"
     result = mock_scraper.scrape(url)
     assert isinstance(result, ScrapeResult)
@@ -74,7 +76,7 @@ def test_mock_scrape_valid_url(mock_scraper):
     assert result.content == "Mocked message content"
 
 def test_mock_scrape_restricted_entity(mock_scraper):
-    mock_scraper.client.get_entity.return_value = MagicMock(restricted=True)
+    mock_scraper.client.get_chat.return_value = MagicMock(restricted=True)
     url = "https://t.me/mock_channel/123"
     result = mock_scraper.scrape(url)
     assert isinstance(result, ScrapeResult)
@@ -82,8 +84,8 @@ def test_mock_scrape_restricted_entity(mock_scraper):
     assert "restricted" in result.scrape_error
 
 def test_mock_scrape_nonexistent_message(mock_scraper):
-    mock_scraper.client.get_entity.return_value = MagicMock(restricted=False)
-    mock_scraper.client.get_messages.return_value = None
+    mock_scraper.client.get_chat.return_value = MagicMock(restricted=False)
+    mock_scraper.client.get_messages.side_effect = Exception("Message not found")
     url = "https://t.me/mock_channel/10000000"
     result = mock_scraper.scrape(url)
     assert isinstance(result, ScrapeResult)
