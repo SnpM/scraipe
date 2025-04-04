@@ -1,7 +1,7 @@
 import asyncio
 import pytest
 from scraipe.async_util import AsyncManager
-from asdftimer import Timer
+from asdftimer import AsdfTimer as Timer
 async def async_add(a, b):
     await asyncio.sleep(0.1)
     return a + b
@@ -54,9 +54,9 @@ def test_run_multiple_success_main_thread():
     tasks *= n
     t = Timer()
     results = list(AsyncManager.run_multiple(tasks,max_workers=1000))
-    elapsed = t.end()
+    t.stop()
     assert sorted(results) == sorted([4, 6, 10, 20] * n)
-    assert elapsed < .6, f"Elapsed time {elapsed} exceeded expected threshold"
+    assert t.elapsed < .6, f"Elapsed time {t.elapsed} exceeded expected threshold"
     AsyncManager.disable_multithreading()
 
 def test_run_multiple_success_multithreading():
@@ -71,7 +71,7 @@ def test_run_multiple_success_multithreading():
     tasks *= n
     t = Timer()
     results = list(AsyncManager.run_multiple(tasks,max_workers=10000))
-    elapsed = t.end()
+    elapsed = t.stop()
     assert sorted(results) == sorted([4, 6, 10] * n)
     assert elapsed < .6, f"Elapsed time {elapsed} exceeded expected threshold"
     AsyncManager.disable_multithreading()
@@ -92,7 +92,7 @@ def test_progressive_yields():
     results = []
     for result in generator:
         results.append(result)
-        elapsed = t.end()
+        elapsed = t.elapsed
         print(f"Yielded result: {result}, elapsed time: {elapsed:.2f} seconds")
         assert pytest.approx(result, abs=.1) == elapsed
 
@@ -112,6 +112,6 @@ def test_progressive_yields_multithreaded():
     results = []
     for result in generator:
         results.append(result)
-        elapsed = t.end()
+        elapsed = t.elapsed
         print(f"Yielded result: {result}, elapsed time: {elapsed:.2f} seconds")
         assert pytest.approx(result, abs=.1) == elapsed

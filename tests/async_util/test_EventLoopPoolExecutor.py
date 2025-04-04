@@ -1,7 +1,7 @@
 import asyncio
 import pytest
 from scraipe.async_util import EventLoopPoolExecutor
-from asdftimer import Timer
+from asdftimer import AsdfTimer as Timer
 
 async def successful_async_function(a, b):
     await asyncio.sleep(0.01)
@@ -37,7 +37,7 @@ def test_parallel_runs():
     
     t = Timer(disable_print=True)
     result = executor.run(run_tasks)
-    duration = t.end()
+    duration = t.stop()
     executor.shutdown(wait=True)
     assert result == ["done"] * n
     assert duration < 1.2, f"Expected duration < 1.2 seconds, got {duration:.2f} seconds"
@@ -69,7 +69,7 @@ async def test_async_run_parallel_runs():
         return await asyncio.gather(*tasks)
     t = Timer(disable_print=True)
     result = await executor.async_run(run_tasks)
-    duration = t.end()
+    duration = t.stop()
     executor.shutdown(wait=True)
     assert result == ["done"] * n
     assert duration < 1.2, f"Expected duration < 1.2 seconds, got {duration:.2f} seconds"

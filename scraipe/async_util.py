@@ -219,7 +219,6 @@ class AsyncManager:
         result_queue: Queue = Queue()
 
         async def producer() -> None:
-            print("Starting producer coroutine")
             async for result in AsyncManager.async_run_multiple(tasks, max_workers=max_workers, *args, **kwargs):
                 # Put each result into the queue.
                 result_queue.put(result)
