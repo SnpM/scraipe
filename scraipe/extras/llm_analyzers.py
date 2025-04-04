@@ -12,7 +12,9 @@ class LlmAnalyzerBase(AsyncAnalyzerBase):
     def __init__(self,
         instruction:str,
         pydantic_schema:Type[BaseModel] = None,
-        max_content_size:int=10000):
+        max_content_size:int=10000,
+        max_workers:int=3):
+        super().__init__(max_workers=max_workers)
         self.instruction = instruction
         self.pydantic_schema = pydantic_schema
         self.max_content_size = max_content_size
@@ -75,9 +77,12 @@ class OpenAiAnalyzer(LlmAnalyzerBase):
         organization:str=None,
         pydantic_schema:Type[BaseModel] = None,
         model:str="gpt-4o-mini",
-        max_content_size:int=10000):
+        max_content_size:int=10000,
+        max_workers:int=3):
         """Initializes the OpenAIAnalyzer instance."""
-        super().__init__(instruction=instruction, pydantic_schema=pydantic_schema, max_content_size=max_content_size)
+        super().__init__(
+            instruction=instruction, pydantic_schema=pydantic_schema,
+            max_content_size=max_content_size,max_workers=max_workers)
         self.api_key = api_key
         self.client = AsyncOpenAI(api_key=api_key,organization=organization)
         self.model = model

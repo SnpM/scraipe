@@ -157,28 +157,41 @@ class AsyncManager:
         return AsyncManager._executor.run(async_func, *args, **kwargs)
     
     @staticmethod
-    async def async_run_multiple(tasks: List[Callable[..., Awaitable[Any]]], *args, **kwargs) -> AsyncGenerator[Any, None]:
+    async def async_run_multiple(tasks: List[Callable[..., Awaitable[Any]]], max_workers=10, *args, **kwargs) -> AsyncGenerator[Any, None]:
         """
         Run multiple asynchronous functions in parallel using the underlying executor.
+        Limits the number of concurrent tasks to max_workers.
         """
-        # Create a coroutine for each task.
-        coros = [AsyncManager._executor.async_run(task, *args, **kwargs) for task in tasks]
-        # Yield results as each task completes.
+        import asyncio
+        # Create a semaphore to limit concurrent tasks.
+        semaphore = asyncio.Semaphore(max_workers)
+
+        async def sem_task(task: Callable[..., Awaitable[Any]]) -> Any:
+            async with semaphore:
+                return await AsyncManager._executor.async_run(task, *args, **kwargs)
+                
+        coros = [sem_task(task) for task in tasks]
         for completed in asyncio.as_completed(coros):
             yield await completed
 
     @staticmethod
-    def run_multiple(tasks: List[Callable[..., Awaitable[Any]]], *args, **kwargs) -> Generator[Any, None, None]:
+    def run_multiple(tasks: List[Callable[..., Awaitable[Any]]], max_workers=10, *args, **kwargs) -> Generator[Any, None, None]:
         """
         Run multiple asynchronous functions in parallel using the underlying executor. 
         Block calling thread and yield results as they complete.
+        
+        Args:
+            tasks: A list of asynchronous functions to run.
+            max_workers: The maximum number of concurrent tasks.
+            *args: Positional arguments for the functions.
+            **kwargs: Keyword arguments for the functions.
         """
         DONE = object()  # Sentinel value to indicate completion
         # Create a queue to hold results.
         result_queue: Queue = Queue()
 
         async def producer() -> None:
-            async for result in AsyncManager.async_run_multiple(tasks, *args, **kwargs):
+            async for result in AsyncManager.async_run_multiple(tasks, max_workers=max_workers, *args, **kwargs):
                 # Put each result into the queue.
                 result_queue.put(result)
             # Signal that all tasks are complete.

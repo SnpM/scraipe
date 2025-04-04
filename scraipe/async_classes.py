@@ -9,6 +9,15 @@ class AsyncScraperBase(IScraper):
     This class provides a synchronous wrapper around the asynchronous scraping method.
     Subclasses must implement the async_scrape() method.
     """
+    max_workers:int = 10
+    def __init__(self, max_workers: int=10):
+        """
+        Initialize the AsyncScraperBase with a maximum number of concurrent workers.
+        
+        Args:
+            max_workers (int): The maximum number of concurrent workers.
+        """
+        self.max_workers = max_workers
     
     @abstractmethod
     async def async_scrape(self, url: str) -> ScrapeResult:
@@ -45,18 +54,28 @@ class AsyncScraperBase(IScraper):
         
         Returns:
             Generator[Tuple[str, ScrapeResult], None, None]: A generator yielding tuples of URL and ScrapeResult.
-        """
+        """        
         def make_task(url):
             async def task():
                 return url, await self.async_scrape(url)
             return task
         tasks = [make_task(url) for url in urls]
-        for result in AsyncManager.run_multiple(tasks):
+        for result in AsyncManager.run_multiple(tasks, self.max_workers):
             yield result
             
             
 
 class AsyncAnalyzerBase(IAnalyzer):
+    max_workers:int = 10
+    def __init__(self, max_workers: int = 10):
+        """
+        Initialize the AsyncAnalyzerBase with a maximum number of concurrent workers.
+        
+        Args:
+            max_workers (int): The maximum number of concurrent workers.
+        """
+        self.max_workers = max_workers
+
     @abstractmethod
     async def async_analyze(self, content: str) -> AnalysisResult:
         """
@@ -83,10 +102,19 @@ class AsyncAnalyzerBase(IAnalyzer):
         return AsyncManager.run(self.async_analyze, content)
     
     def analyze_multiple(self, contents: dict) -> "Generator[Tuple[str, AnalysisResult], None, None]":
-        # Create an async task for each content and yield (link, AnalysisResult)
+        """
+        Asynchronously analyze multiple contents and yield results in synchronous context.
+        Blocks while waiting for results.
+
+        Args:
+            contents (dict): A dictionary of contents to analyze, with keys as identifiers and values as content.
+
+        Returns:
+            Generator[Tuple[str, AnalysisResult], None, None]: A generator yielding tuples of identifier and AnalysisResult.
+        """
         def make_task(link, content):
             async def task():
                 return link, await self.async_analyze(content)
             return task
         tasks = [make_task(link, content) for link, content in contents.items()]
-        return AsyncManager.run_multiple(tasks)
+        return AsyncManager.run_multiple(tasks, self.max_workers)
