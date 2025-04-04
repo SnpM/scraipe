@@ -2,7 +2,7 @@ import pytest
 import asyncio
 from unittest.mock import patch, AsyncMock, MagicMock
 
-from scraipe.extras.llm_analyzers import OpenAiAnalyzer
+from scraipe.extended.llm_analyzers import OpenAiAnalyzer
 import pydantic
 
 TARGET_MODULE = OpenAiAnalyzer.__module__

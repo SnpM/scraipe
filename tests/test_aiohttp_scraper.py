@@ -1,6 +1,6 @@
 import pytest
 from aioresponses import aioresponses
-from scraipe.extras.aiohttp_scraper import AiohttpScraper
+from scraipe.extended.aiohttp_scraper import AiohttpScraper
 from scraipe.classes import ScrapeResult
 
 @pytest.mark.asyncio

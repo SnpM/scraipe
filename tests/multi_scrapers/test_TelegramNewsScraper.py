@@ -1,7 +1,7 @@
 import unittest
 import re
-from scraipe.extras.multi_scrapers import TelegramNewsScraper
-from scraipe.extras.multi_scraper import IngressRule
+from scraipe.extended.multi_scrapers import TelegramNewsScraper
+from scraipe.extended.multi_scraper import IngressRule
 from scraipe.classes import IScraper, ScrapeResult
 
 # ...existing imports...

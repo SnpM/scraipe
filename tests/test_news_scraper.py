@@ -1,5 +1,5 @@
 import pytest
-from scraipe.extras.news_scraper import NewsScraper
+from scraipe.extended.news_scraper import NewsScraper
 import trafilatura
 
 @pytest.mark.asyncio
