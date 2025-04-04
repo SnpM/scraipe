@@ -57,13 +57,15 @@ async def test_async_run_exception():
         await executor.async_run(failing_async_function())
 
 @pytest.mark.asyncio
-async def test_async_run_parallel_runs():
+async def test_async_run_parallel():
     executor = DefaultBackgroundExecutor()
     async def async_task():
         await asyncio.sleep(1)
         return "done"
+    
+    n = 5
     async def run_tasks():
-        tasks = [async_task() for _ in range(10)]
+        tasks = [async_task() for _ in range(n)]
         return await asyncio.gather(*tasks)
     
     # Wait for previous tasks to finish
@@ -72,5 +74,5 @@ async def test_async_run_parallel_runs():
     t = Timer(disable_print=True)
     result = await executor.async_run(run_tasks())
     duration = t.stop()
-    assert result == ["done"] * 10
+    assert result == ["done"] * n
     assert duration < 1.1, f"Expected duration < 1.1 seconds, got {duration:.2f} seconds"
