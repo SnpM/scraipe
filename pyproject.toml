@@ -15,7 +15,7 @@ pandas = ">=2.2.3"
 tqdm = "*"
 bs4 = "0.0.2"
 
-# scraipe[extras] dependencies
+# scraipe[extended] dependencies
 openai = {version = "1.68.2", optional = true}
 trafilatura = { version = "2.0.0", markers = "python_version < '4'" , optional = true }
 python-dotenv = { version = "1.1.0", optional = true }
@@ -24,7 +24,7 @@ pyrogram = { version = "2.0.106", optional = true }
 tgcrypto = { version = "1.2.5", optional = true }
 
 [tool.poetry.extras]
-extras = [
+extended = [
     "pyrogram", "tgcrypto",
     "trafilatura", "openai",
     "python-dotenv", "aiohttp"
