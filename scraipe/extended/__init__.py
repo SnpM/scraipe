@@ -3,9 +3,10 @@ try:
     import telethon
     import trafilatura
     import openai
+    import aiohttp
     _AVAILABLE = True
 except ImportError:
-    raise "Missing dependencies. Install with `pip install scraipe[extras]`."
+    raise "Missing dependencies. Install with `pip install scraipe[extended]`."
 
 if _AVAILABLE:
     from scraipe.extended.telegram_scraper import TelegramScraper
