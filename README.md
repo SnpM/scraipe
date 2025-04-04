@@ -29,17 +29,11 @@ pip install scraipe[extras]
    # Configure the scraper
    scraper = NewsScraper()
    
-   # Define an instruction and optional Pydantic schema for the analyzer
+   # Define an instruction for the analyzer
    instruction = '''
    Extract a list of celebrities mentioned in the article text.
    Return a JSON dictionary with the schema: {"celebrities": ["celebrity1", "celebrity2", ...]}
-   '''
-   
-   from pydantic import BaseModel
-   from typing import List
-   class ExpectedOutput(BaseModel):
-       celebrities: List[str]
-   
+   '''   
    analyzer = OpenAiAnalyzer("YOUR_OPENAI_API_KEY", instruction, pydantic_schema=ExpectedOutput)
    ```
    

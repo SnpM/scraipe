@@ -7,7 +7,20 @@ from abc import abstractmethod
 from scraipe.async_classes import AsyncAnalyzerBase
 
 class LlmAnalyzerBase(AsyncAnalyzerBase):
-    """Base class for LLM analyzers. This class should not be used directly."""
+    """Base class for LLM analyzers. This class should not be used directly.
+    This class provides a common interface for LLM analyzers and handles the common logic for analyzing content using LLMs.
+    query_llm() is an abstract method that requires the model to return a json string.
+    """
+    
+    # Attributes
+    instruction:str
+    """The instruction to be used for the LLM. This should be a string that describes the task to be performed."""
+    pydantic_schema:Type[BaseModel] = None
+    """The pydantic schema to be used for validating the response. This should be a subclass of pydantic.BaseModel."""
+    max_content_size:int = 10000
+    """The maximum size of the content to be analyzed. This should be an integer that specifies the maximum number of characters."""
+    max_workers:int = 3
+    """The maximum number of workers to be used for the analysis. This should be an integer that specifies the maximum number of concurrent requests."""
     
     def __init__(self,
         instruction:str,
@@ -22,7 +35,7 @@ class LlmAnalyzerBase(AsyncAnalyzerBase):
     
     @abstractmethod
     async def query_llm(self, content:str, instruction:str) -> str:
-        """Queries the OpenAI API with the content and returns the response."""
+        """Queries the OpenAI API with the content and returns the json response."""
         raise NotImplementedError("This method should be implemented by subclasses.")
     
     async def async_analyze(self, content:str) -> AnalysisResult:
@@ -58,19 +71,10 @@ class LlmAnalyzerBase(AsyncAnalyzerBase):
         
         return AnalysisResult.success(output=output)
 
+
 class OpenAiAnalyzer(LlmAnalyzerBase):
-    """An analyzer that uses the OpenAI API to analyze text and returns a json parsed dict"""
-    
-    # Attributes
-    client:AsyncOpenAI
-    """The OpenAI instance to use for querying the OpenAI API"""
-    instruction:str
-    """The instruction or prompt to guide the OpenAI model's behavior"""
-    pydantic_schema:Type[BaseModel]
-    """A Pydantic schema to validate the model's output"""
-    model:str
-    """The name of the OpenAI model to use"""
-    
+    """An LlmAnalyzer that uses the OpenAI API."""
+
     def __init__(self,
         api_key:str,
         instruction:str,
@@ -79,7 +83,17 @@ class OpenAiAnalyzer(LlmAnalyzerBase):
         model:str="gpt-4o-mini",
         max_content_size:int=10000,
         max_workers:int=3):
-        """Initializes the OpenAIAnalyzer instance."""
+        """Initializes the OpenAIAnalyzer instance.
+        
+        Args:
+            api_key (str): The API key for OpenAI.
+            instruction (str): The instruction to be used for the LLM.
+            organization (str, optional): The organization to be used for the OpenAI API. Defaults to None.
+            pydantic_schema (Type[BaseModel], optional): The pydantic schema to be used for validating the response. Defaults to None.
+            model (str, optional): The model to be used for the OpenAI API. Defaults to "gpt-4o-mini".
+            max_content_size (int, optional): The maximum size of the content to be analyzed. Defaults to 10000.
+            max_workers (int, optional): The maximum number of workers to be used for the analysis. Defaults to 3.
+        """
         super().__init__(
             instruction=instruction, pydantic_schema=pydantic_schema,
             max_content_size=max_content_size,max_workers=max_workers)
