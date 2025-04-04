@@ -83,7 +83,14 @@ class DefaultBackgroundExecutor(IAsyncExecutor):
         """
         self._loop.call_soon_threadsafe(self._loop.stop)
         if wait:
-            self._thread.join()
+            # Check if the thread is the calling thread
+            if threading.current_thread() is not self._thread:
+                # Wait for the thread to finish
+                self._thread.join()
+            else:
+                # If the calling thread is the same as the executor thread, we can't join it.
+                # So we just stop the loop and let it exit.
+                pass
         self._loop.close()
 
 class EventLoopPoolExecutor(IAsyncExecutor):

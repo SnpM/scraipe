@@ -15,7 +15,6 @@ class TelegramScraper(AsyncScraperBase):
         self.client.start(phone_number)
         
     async def _get_telegram_content(self, chat_name:str, message_id:int):
-        AsyncManager.disable_multithreading()
         await self.client.connect()
         # Search for entity
         try:
@@ -34,7 +33,7 @@ class TelegramScraper(AsyncScraperBase):
             raise Exception(f"Failed to get message {message_id} from {chat_name}: {e}")
         return message.message
 
-    async def async_scrape(self, url: str) -> ScrapeResult:  # Make scrape an async method
+    async def async_scrape(self, url: str) -> ScrapeResult:
         if not url.startswith("https://t.me/"):
             return ScrapeResult(link=url, scrape_success=False, scrape_error=f"URL {url} is not a telegram link.")
         # Extract the username and message id

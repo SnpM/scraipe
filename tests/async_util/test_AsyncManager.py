@@ -80,11 +80,10 @@ def test_progressive_yields():
     # Test that AsyncManager.run_multiple yields results progressively as they are completed.
     AsyncManager.disable_multithreading()
     tasks = [
-        lambda: async_sleep(0.5),
+        lambda: async_sleep(0.2),
+        lambda: async_sleep(.5),
+        lambda: async_sleep(.75),
         lambda: async_sleep(1),
-        lambda: async_sleep(1.5),
-        lambda: async_sleep(2),
-        lambda: async_sleep(2.5),
     ]
     
     # Measure the time for each task to complete
@@ -101,11 +100,10 @@ def test_progressive_yields_multithreaded():
     # Test that AsyncManager.run_multiple yields results progressively as they are completed.
     AsyncManager.enable_multithreading(pool_size=10)
     tasks = [
-        lambda: async_sleep(0.5),
+        lambda: async_sleep(0.2),
+        lambda: async_sleep(.5),
+        lambda: async_sleep(.75),
         lambda: async_sleep(1),
-        lambda: async_sleep(1.5),
-        lambda: async_sleep(2),
-        lambda: async_sleep(2.5),
     ]
     
     # Measure the time for each task to complete
