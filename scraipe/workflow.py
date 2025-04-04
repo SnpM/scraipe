@@ -3,6 +3,9 @@ from scraipe.classes import IScraper, IAnalyzer, ScrapeResult, AnalysisResult
 import pandas as pd
 from pydantic import BaseModel, ValidationError
 from tqdm import tqdm
+import logging
+from logging import Logger
+
 @final
 class Workflow:
     @final
@@ -25,11 +28,13 @@ class Workflow:
     analyzer:IAnalyzer
     thread_count:int 
     store:Dict[str, StoreRecord]
-    def __init__(self, scraper:IScraper, analyzer:IAnalyzer):
+    def __init__(self, scraper:IScraper, analyzer:IAnalyzer,
+        logger:Logger = None):
         self.scraper = scraper
         self.analyzer = analyzer
         self.thread_count = 1
         self.store = {}
+        self.logger = logger if logger else logging.getLogger(__name__)
         
     def scrape(self, links:List[str], overwrite:bool=False):
         """Scrape the content from the given links."""
@@ -45,8 +50,7 @@ class Workflow:
                 if url not in self.store or self.store[url].scrape_result is None or self.store[url].scrape_result.scrape_success == False:
                     # If the link is not in the store or the scrape result is None or failed, add it to the list
                     links_to_scrape.append(url)
-        print (f"Scraping {len(links_to_scrape)}/{len(links)} new or retry links...")
-        
+        self.logger.info(f"Scraping {len(links_to_scrape)}/{len(links)} new or retry links...")
         
         scrapes = {}
         # Update the scrape store
@@ -60,15 +64,15 @@ class Workflow:
 
                     # Sanity check: ensure content is not None when success is True
                     if result.scrape_success and result.content is None:
-                        print(f"Warning: Scrape result for {url} is successful but content is None.")
+                        self.logger.info(f"Warning: Scrape result for {url} is successful but content is None.")
                         self.store[url].scrape_result = ScrapeResult(link=url, scrape_success=False, scrape_error="Content is None.")
                     pbar.update(1)
             except Exception as e:
-                print(f"Error during scraping: {e}. Halting.")
+                self.logger.error(f"Error during scraping: {e}. Halting.")
             
         # Print summary
         success_count = sum(1 for result in scrapes.values() if result.scrape_success)
-        print(f"Successfully scraped {success_count}/{len(links_to_scrape)} links.")
+        self.logger.info(f"Successfully scraped {success_count}/{len(links_to_scrape)} links.")
     
     def get_scrapes(self) -> pd.DataFrame:
         """Return a copy of the store's scrape results as a DataFrame"""
@@ -88,12 +92,12 @@ class Workflow:
             try:
                 result = ScrapeResult(**row)
             except ValidationError as e:
-                print(f"Failed to update scrape result {row}. Error: {e}")
+                self.logger.error(f"Failed to update scrape result {row}. Error: {e}")
                 continue
             if result.link not in self.store:
                 self.store[result.link] = self.StoreRecord(result.link, result)
             self.store[result.link].scrape_result = result
-        print(f"Updated {len(state_store_df)} scrape results.")
+        self.logger.info(f"Updated {len(state_store_df)} scrape results.")
     
     def analyze(self, overwrite:bool=False):
         """Analyze the unanalyzed content in the scrape store."""
@@ -106,7 +110,7 @@ class Workflow:
                     
         links_to_analyze = [link for link in links_with_content if self.store[link].analysis_result is None]
             
-        print(f"Analyzing {len(links_to_analyze)}/{len(links_with_content)} new or retry links with content...")
+        self.logger.info(f"Analyzing {len(links_to_analyze)}/{len(links_with_content)} new or retry links with content...")
         
         # Analyze the content
         content_dict = {link: self.store[link].scrape_result.content for link in links_to_analyze}
@@ -123,11 +127,11 @@ class Workflow:
                     # update the progress bar
                     pbar.update(1)
             except Exception as e:
-                print(f"Error during analysis: {e}. Halting.")
+                self.logger.error(f"Error during analysis: {e}. Halting.")
                     
         # Print summary
         success_count = sum([1 for result in analyses.values() if result.analysis_success])
-        print(f"Successfully analyzed {success_count}/{len(content_dict)} links.")
+        self.logger.info(f"Successfully analyzed {success_count}/{len(content_dict)} links.")
     
     def get_analyses(self) -> pd.DataFrame:
         """Return a copy of the store's analysis results as a DataFrame"""
@@ -147,12 +151,12 @@ class Workflow:
             try:
                 result = AnalysisResult(**row)
             except ValidationError as e:
-                print(f"Failed to update analysis result {row}. Error: {e}")
+                self.logger.info(f"Failed to update analysis result {row}. Error: {e}")
                 continue
             if result.link not in self.store:
                 self.store[result.link] = self.StoreRecord(result.link)
             self.store[result.link].analysis_result = result
-        print(f"Updated {len(state_store_df)} analysis results.")
+        self.logger.info(f"Updated {len(state_store_df)} analysis results.")
     
     def get_records(self) -> pd.DataFrame:
         """Return a copy of the store's records as a DataFrame"""
@@ -176,7 +180,7 @@ class Workflow:
             if "output" in row:
                 record.analysis_result = AnalysisResult(**row)
             self.store[row["link"]] = record
-        print(f"Updated {len(state_store_df)} records.")
+        self.logger.info(f"Updated {len(state_store_df)} records.")
     
     def export(self) -> pd.DataFrame:
         """Export links and unnested outputs."""
