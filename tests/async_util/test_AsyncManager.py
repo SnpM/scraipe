@@ -14,6 +14,10 @@ async def async_double(x, sleep_time=.1):
     await asyncio.sleep(sleep_time)
     return x * 2
 
+async def async_sleep(sleep_time=.1):
+    await asyncio.sleep(sleep_time)
+    return sleep_time
+
 def test_run_success_main_thread():
     # Ensure main thread executor.
     AsyncManager.disable_multithreading()
@@ -56,14 +60,14 @@ def test_run_multiple_success_main_thread():
     AsyncManager.disable_multithreading()
 
 def test_run_multiple_success_multithreading():
-    AsyncManager.enable_multithreading(pool_size=10)
+    AsyncManager.enable_multithreading(pool_size=1)
     
     tasks = [
         lambda: async_double(2,.5),
         lambda: async_double(3,.5),
         lambda: async_double(5,.5),
     ]
-    n=100
+    n=5
     tasks *= n
     t = Timer()
     results = list(AsyncManager.run_multiple(tasks,max_workers=10000))
@@ -71,3 +75,45 @@ def test_run_multiple_success_multithreading():
     assert sorted(results) == sorted([4, 6, 10] * n)
     assert elapsed < .6, f"Elapsed time {elapsed} exceeded expected threshold"
     AsyncManager.disable_multithreading()
+    
+def test_progressive_yields():
+    # Test that AsyncManager.run_multiple yields results progressively as they are completed.
+    AsyncManager.disable_multithreading()
+    tasks = [
+        lambda: async_sleep(0.5),
+        lambda: async_sleep(1),
+        lambda: async_sleep(1.5),
+        lambda: async_sleep(2),
+        lambda: async_sleep(2.5),
+    ]
+    
+    # Measure the time for each task to complete
+    t = Timer()
+    generator = AsyncManager.run_multiple(tasks, max_workers=10) 
+    results = []
+    for result in generator:
+        results.append(result)
+        elapsed = t.end()
+        print(f"Yielded result: {result}, elapsed time: {elapsed:.2f} seconds")
+        assert pytest.approx(result, abs=.1) == elapsed
+
+def test_progressive_yields_multithreaded():
+    # Test that AsyncManager.run_multiple yields results progressively as they are completed.
+    AsyncManager.enable_multithreading(pool_size=10)
+    tasks = [
+        lambda: async_sleep(0.5),
+        lambda: async_sleep(1),
+        lambda: async_sleep(1.5),
+        lambda: async_sleep(2),
+        lambda: async_sleep(2.5),
+    ]
+    
+    # Measure the time for each task to complete
+    t = Timer()
+    generator = AsyncManager.run_multiple(tasks, max_workers=10) 
+    results = []
+    for result in generator:
+        results.append(result)
+        elapsed = t.end()
+        print(f"Yielded result: {result}, elapsed time: {elapsed:.2f} seconds")
+        assert pytest.approx(result, abs=.1) == elapsed

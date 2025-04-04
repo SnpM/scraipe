@@ -1,6 +1,6 @@
 import asyncio
 import pytest
-from scraipe.async_util import DefaultThreadExecutor
+from scraipe.async_util import DefaultBackgroundExecutor
 from asdftimer import Timer
 
 async def successful_async_function(a, b):
@@ -12,17 +12,17 @@ async def failing_async_function():
     raise ValueError('Test exception')
 
 def test_success():
-    executor = DefaultThreadExecutor()
+    executor = DefaultBackgroundExecutor()
     result = executor.run(successful_async_function, 5, 7)
     assert result == 12
 
 def test_exception():
-    executor = DefaultThreadExecutor()
+    executor = DefaultBackgroundExecutor()
     with pytest.raises(ValueError, match='Test exception'):
         executor.run(failing_async_function)
 
 def test_parallel_runs():
-    executor = DefaultThreadExecutor()
+    executor = DefaultBackgroundExecutor()
     
     async def async_task():
         await asyncio.sleep(1)
@@ -39,19 +39,19 @@ def test_parallel_runs():
 
 @pytest.mark.asyncio
 async def test_async_run_success():
-    executor = DefaultThreadExecutor()
+    executor = DefaultBackgroundExecutor()
     result = await executor.async_run(successful_async_function, 5, 7)
     assert result == 12
 
 @pytest.mark.asyncio
 async def test_async_run_exception():
-    executor = DefaultThreadExecutor()
+    executor = DefaultBackgroundExecutor()
     with pytest.raises(ValueError, match='Test exception'):
         await executor.async_run(failing_async_function)
 
 @pytest.mark.asyncio
 async def test_async_run_parallel_runs():
-    executor = DefaultThreadExecutor()
+    executor = DefaultBackgroundExecutor()
     async def async_task():
         await asyncio.sleep(1)
         return "done"

@@ -2,7 +2,7 @@ from typing import final, List, Dict
 from scraipe.classes import IScraper, IAnalyzer, ScrapeResult, AnalysisResult
 import pandas as pd
 from pydantic import BaseModel, ValidationError
-
+from tqdm import tqdm
 @final
 class Workflow:
     @final
@@ -50,19 +50,21 @@ class Workflow:
         
         scrapes = {}
         # Update the scrape store
-        try:
-            for url,result in self.scraper.scrape_multiple(links_to_scrape):
-                scrapes[url] = result
-                if url not in self.store:
-                    self.store[url] = self.StoreRecord(url)
-                self.store[url].scrape_result = result
-                
-                # Sanity check: ensure content is not None when success is True
-                if result.scrape_success and result.content is None:
-                    print(f"Warning: Scrape result for {url} is successful but content is None.")
-                    self.store[url].scrape_result = ScrapeResult(link=url, scrape_success=False, scrape_error="Content is None.")
-        except Exception as e:
-            print(f"Error during scraping: {e}. Halting.")
+        with tqdm(total=len(links_to_scrape), desc="Scraping", unit="link") as pbar:
+            try:
+                for url, result in self.scraper.scrape_multiple(links_to_scrape):
+                    scrapes[url] = result
+                    if url not in self.store:
+                        self.store[url] = self.StoreRecord(url)
+                    self.store[url].scrape_result = result
+
+                    # Sanity check: ensure content is not None when success is True
+                    if result.scrape_success and result.content is None:
+                        print(f"Warning: Scrape result for {url} is successful but content is None.")
+                        self.store[url].scrape_result = ScrapeResult(link=url, scrape_success=False, scrape_error="Content is None.")
+                    pbar.update(1)
+            except Exception as e:
+                print(f"Error during scraping: {e}. Halting.")
             
         # Print summary
         success_count = sum(1 for result in scrapes.values() if result.scrape_success)
@@ -111,13 +113,18 @@ class Workflow:
         assert all([content is not None for content in content_dict.values()])
         # update the store
         analyses = {}
-        try:
-            for link, result in self.analyzer.analyze_multiple(content_dict):
-                self.store[link].analysis_result = result
-                analyses[link] = result
-        except Exception as e:
-            print(f"Error during analysis: {e}. Halting.")
-        
+        num_items = len(content_dict)
+        # Use tqdm to show progress
+        with tqdm(total=num_items, desc="Analyzing", unit="item") as pbar:
+            try:
+                for link, result in self.analyzer.analyze_multiple(content_dict):
+                    self.store[link].analysis_result = result
+                    analyses[link] = result
+                    # update the progress bar
+                    pbar.update(1)
+            except Exception as e:
+                print(f"Error during analysis: {e}. Halting.")
+                    
         # Print summary
         success_count = sum([1 for result in analyses.values() if result.analysis_success])
         print(f"Successfully analyzed {success_count}/{len(content_dict)} links.")

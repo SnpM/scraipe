@@ -6,48 +6,87 @@ import threading
 from concurrent.futures import Future, ThreadPoolExecutor
 from queue import Queue
 import time
-import nest_asyncio
+import asyncio
 # Base interface for asynchronous executors.
 class IAsyncExecutor:
     @abstractmethod
-    def run(self, async_func: Callable[..., Awaitable[Any]], *args, **kwargs) -> Any:
-        raise NotImplementedError
+    def submit(self, async_func: Callable[..., Awaitable[Any]], *args, **kwargs) -> Future:
+        raise NotImplementedError("Must be implemented by subclasses.")
     
-    @abstractmethod
+    def run(self, async_func: Callable[..., Awaitable[Any]], *args, **kwargs) -> Any:
+        """
+        Run an asynchronous function in the executor and block until it completes.
+        
+        Args:
+            async_func: The asynchronous function to execute.
+            *args: Positional arguments for the function.
+            **kwargs: Keyword arguments for the function.
+        
+        Returns:
+            The result of the asynchronous function.
+        """
+        return self.submit(async_func, *args, **kwargs).result()
+    
     async def async_run(self, async_func: Callable[..., Awaitable[Any]], *args, **kwargs) -> Any:
-        raise NotImplementedError
+        """
+        Run an asynchronous function in the executor and return its result.
+        
+        Args:
+            async_func: The asynchronous function to execute.
+            *args: Positional arguments for the function.
+            **kwargs: Keyword arguments for the function.
+        
+        Returns:
+            The result of the asynchronous function.
+        """
+        # wrap future
+        future = self.submit(async_func, *args, **kwargs)
+        async_future = asyncio.wrap_future(future)
+        return await async_future
     
     def shutdown(self, wait: bool = True) -> None:
         pass
 
 @final
-class DefaultThreadExecutor(IAsyncExecutor):
-    """Run a function in the current thread with an asyncio event loop.
-    Stateless executor that runs functions in the current thread.
-    Uses nest_asyncio to allow running coroutines in environments like Jupyter.
-    """
-    def run(self, async_func: Callable[..., Awaitable[Any]], *args, **kwargs) -> Any:
-        assert isinstance(async_func, Callable), "async_func must be callable"
-        assert asyncio.iscoroutinefunction(async_func), "async_func must be a coroutine function"
+class DefaultBackgroundExecutor(IAsyncExecutor):
+    """Maintains a single dedicated thread for an asyncio event loop."""
+    def __init__(self) -> None:
+        def _start_loop() -> None:
+            """Set the event loop in the current thread and run it forever."""
+            asyncio.set_event_loop(self._loop)
+            self._loop.run_forever()
+        self._loop = asyncio.new_event_loop()
+        self._thread = threading.Thread(target=_start_loop, daemon=True)
+        self._thread.start()
         
+    def submit(self, async_func: Callable[..., Awaitable[Any]], *args, **kwargs) -> Future:
+        """
+        Submit an asynchronous function to the executor.
+        
+        Args:
+            async_func: The asynchronous function to execute.
+            *args: Positional arguments for the function.
+            **kwargs: Keyword arguments for the function.
+        
+        Returns:
+            A Future object representing the execution of the function.
+        """
         coro = async_func(*args, **kwargs)
-        loop = asyncio.get_event_loop()
+        return asyncio.run_coroutine_threadsafe(coro, self._loop)
+    
+    def shutdown(self, wait: bool = True) -> None:
+        """
+        Shutdown the executor and stop the event loop.
+        
+        Args:
+            wait: If True, block until the thread is terminated.
+        """
+        self._loop.call_soon_threadsafe(self._loop.stop)
+        if wait:
+            self._thread.join()
+        self._loop.close()
 
-        if loop.is_running():            
-            # Patch the current loop to allow nested run_until_complete calls.
-            nest_asyncio.apply(loop)
-        return loop.run_until_complete(coro)
-
-    async def async_run(self, async_func: Callable[..., Awaitable[Any]], *args, **kwargs) -> Any:
-        # Just run the function in the current thread.
-        return await async_func(*args, **kwargs)
-
-import asyncio
-import threading
-from concurrent.futures import Future
-from typing import Any, Callable, Awaitable, List, Tuple
-
-class EventLoopPoolExecutor:
+class EventLoopPoolExecutor(IAsyncExecutor):
     """
     A utility class that manages a pool of persistent asyncio event loops,
     each running in its own dedicated thread. It load balances tasks among
@@ -100,30 +139,6 @@ class EventLoopPoolExecutor:
         # Decrement the counter when the task completes.
         future.add_done_callback(lambda f: self._decrement_pending(index))
         return future
-
-    def run(self, async_func: Callable[..., Awaitable[Any]], *args, **kwargs) -> Any:
-        """
-        Submit an asynchronous function to the least-loaded event loop and block until completion.
-        
-        Args:
-            async_func: The asynchronous function to execute.
-            *args: Positional arguments for the function.
-            **kwargs: Keyword arguments for the function.
-        
-        Returns:
-            A concurrent.futures.Future representing the task.
-        """
-        future = self.submit(async_func, *args, **kwargs)
-        # Wait for the result and return it.
-        return future.result()
-
-    
-    async def async_run(self, async_func: Callable[..., Awaitable[Any]], *args, **kwargs) -> Any:
-        """Submit an asynchronous function to the least-loaded event loop and return its result."""
-        future = self.submit(async_func, *args, **kwargs)
-        # Convert the concurrent.futures.Future into an awaitable asyncio.Future.
-        async_future = asyncio.wrap_future(future, loop=asyncio.get_running_loop())
-        return await async_future
                 
     def shutdown(self, wait: bool = True) -> None:
         """
@@ -147,7 +162,7 @@ class AsyncManager:
     By default, it uses MainThreadExecutor. To enable multithreading,
     call enable_multithreading() to switch to multithreaded event loops.
     """
-    _executor: IAsyncExecutor = DefaultThreadExecutor()
+    _executor: IAsyncExecutor = DefaultBackgroundExecutor()
 
     @staticmethod
     def run(async_func: Callable[..., Awaitable[Any]], *args, **kwargs) -> Any:
@@ -155,22 +170,28 @@ class AsyncManager:
         Run the given asynchronous function using the underlying executor.
         """
         return AsyncManager._executor.run(async_func, *args, **kwargs)
-    
+
     @staticmethod
     async def async_run_multiple(tasks: List[Callable[..., Awaitable[Any]]], max_workers=10, *args, **kwargs) -> AsyncGenerator[Any, None]:
         """
         Run multiple asynchronous functions in parallel using the underlying executor.
         Limits the number of concurrent tasks to max_workers.
         """
-        import asyncio
+        
+        assert max_workers > 0, "max_workers must be greater than 0"        
+        
+        
         # Create a semaphore to limit concurrent tasks.
         semaphore = asyncio.Semaphore(max_workers)
 
-        async def sem_task(task: Callable[..., Awaitable[Any]]) -> Any:
-            async with semaphore:
-                return await AsyncManager._executor.async_run(task, *args, **kwargs)
+        
+        async def sem_task(task: Callable[..., Awaitable[Any]], sem:asyncio.Semaphore) -> Any:
+            async with sem:
+                # Submit the task to the executor and wait for its result.
+                result = await AsyncManager._executor.async_run(task, *args, **kwargs)
+                return result
                 
-        coros = [sem_task(task) for task in tasks]
+        coros = [sem_task(task, semaphore) for task in tasks]
         for completed in asyncio.as_completed(coros):
             yield await completed
 
@@ -191,6 +212,7 @@ class AsyncManager:
         result_queue: Queue = Queue()
 
         async def producer() -> None:
+            print("Starting producer coroutine")
             async for result in AsyncManager.async_run_multiple(tasks, max_workers=max_workers, *args, **kwargs):
                 # Put each result into the queue.
                 result_queue.put(result)
@@ -198,7 +220,7 @@ class AsyncManager:
             result_queue.put(DONE)
             
         # Start the producer coroutine
-        AsyncManager._executor.run(producer)
+        AsyncManager._executor.submit(producer)
 
         # Yield results until all tasks are complete.
         POLL_INTERVAL = 0.01  # seconds
@@ -241,4 +263,4 @@ class AsyncManager:
         # Shut down the current executor if it's a BackgroundLoopExecutor
         AsyncManager._executor.shutdown(wait=True)
         # Create a new MainThreadExecutor
-        AsyncManager._executor = DefaultThreadExecutor()
+        AsyncManager._executor = DefaultBackgroundExecutor()

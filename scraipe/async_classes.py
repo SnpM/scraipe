@@ -60,8 +60,7 @@ class AsyncScraperBase(IScraper):
                 return url, await self.async_scrape(url)
             return task
         tasks = [make_task(url) for url in urls]
-        for result in AsyncManager.run_multiple(tasks, self.max_workers):
-            yield result
+        return AsyncManager.run_multiple(tasks, self.max_workers)
             
             
 

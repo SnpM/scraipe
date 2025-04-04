@@ -70,7 +70,7 @@ class IScraper(ABC):
 
     def scrape_multiple(self, urls: List[str]) -> Generator[Tuple[str, ScrapeResult], None, None]:
         """Get content from multiple urls."""
-        for url in tqdm.tqdm(urls, desc="Scraping URLs"):
+        for url in urls:
             result = self.scrape(url)
             yield url, result
 
@@ -82,6 +82,6 @@ class IAnalyzer(ABC):
     
     def analyze_multiple(self, contents: Dict[str, str]) -> Generator[Tuple[str, AnalysisResult], None, None]:
         """Analyze multiple contents."""
-        for link, content in tqdm.tqdm(contents.items(), desc="Analyzing content"):
+        for link, content in contents.items():
             result = self.analyze(content)
             yield link, result

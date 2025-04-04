@@ -4,7 +4,7 @@ import json
 from pydantic import BaseModel, ValidationError
 from typing import Type
 from abc import abstractmethod
-from async_classes import AsyncAnalyzerBase
+from scraipe.async_classes import AsyncAnalyzerBase
 
 class LlmAnalyzerBase(AsyncAnalyzerBase):
     """Base class for LLM analyzers. This class should not be used directly."""
