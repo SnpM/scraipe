@@ -27,13 +27,13 @@ def test_run_exception_main_thread():
 
 def test_run_success_multithreading():
     # Switch to multithreaded executor.
-    AsyncManager.enable_multithreading(max_workers=2)
+    AsyncManager.enable_multithreading(2)
     result = AsyncManager.run(async_add, 10, 5)
     assert result == 15
     AsyncManager.disable_multithreading()
 
 def test_run_exception_multithreading():
-    AsyncManager.enable_multithreading(max_workers=2)
+    AsyncManager.enable_multithreading(2)
     with pytest.raises(RuntimeError, match="failure"):
         AsyncManager.run(async_fail)
     AsyncManager.disable_multithreading()
@@ -56,7 +56,7 @@ def test_run_multiple_success_main_thread():
     AsyncManager.disable_multithreading()
 
 def test_run_multiple_success_multithreading():
-    AsyncManager.enable_multithreading(max_workers=10)
+    AsyncManager.enable_multithreading(pool_size=10)
     
     tasks = [
         lambda: async_double(2,.5),

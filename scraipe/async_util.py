@@ -54,15 +54,15 @@ class EventLoopPoolExecutor:
     the event loops by tracking pending tasks and selecting the loop with
     the smallest load.
     """
-    def __init__(self, num_loops: int = 1) -> None:
-        self.num_loops = num_loops
+    def __init__(self, pool_size: int = 1) -> None:
+        self.pool_size = pool_size
         self.event_loops: List[asyncio.AbstractEventLoop] = []
         self.threads: List[threading.Thread] = []
         # Track the number of pending tasks per event loop.
-        self.pending_tasks: List[int] = [0] * num_loops
+        self.pending_tasks: List[int] = [0] * pool_size
         self._lock = threading.Lock()
 
-        for _ in range(num_loops):
+        for _ in range(pool_size):
             loop = asyncio.new_event_loop()
             t = threading.Thread(target=self._start_loop, args=(loop,), daemon=True)
             t.start()
@@ -84,7 +84,7 @@ class EventLoopPoolExecutor:
         """
         with self._lock:
             # Choose the loop with the fewest pending tasks.
-            index = min(range(self.num_loops), key=lambda i: self.pending_tasks[i])
+            index = min(range(self.pool_size), key=lambda i: self.pending_tasks[i])
             self.pending_tasks[index] += 1 
             return self.event_loops[index], index
 
@@ -224,14 +224,14 @@ class AsyncManager:
         AsyncManager._executor = executor
 
     @staticmethod
-    def enable_multithreading(max_workers: int = 1) -> None:
+    def enable_multithreading(pool_size: int = 3) -> None:
         """
         Switch to a multithreaded executor. Tasks will then be dispatched to background threads.
         """
         # Shut down the current executor if it's a BackgroundLoopExecutor
         AsyncManager._executor.shutdown(wait=True)
         # Create a new BackgroundLoopExecutor with the specified number of workers
-        AsyncManager._executor = EventLoopPoolExecutor(max_workers)
+        AsyncManager._executor = EventLoopPoolExecutor(pool_size)
     
     @staticmethod
     def disable_multithreading() -> None:

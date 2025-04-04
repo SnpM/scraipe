@@ -24,7 +24,7 @@ def test_exception():
     executor.shutdown(wait=True)
 
 def test_parallel_runs():
-    executor = EventLoopPoolExecutor()
+    executor = EventLoopPoolExecutor(pool_size=1)
     
     async def async_task():
         await asyncio.sleep(1)
@@ -38,7 +38,7 @@ def test_parallel_runs():
     duration = t.end()
     executor.shutdown(wait=True)
     assert result == ["done"] * 10
-    assert duration < 1.1, f"Expected duration < 1.1 seconds, got {duration:.2f} seconds"
+    assert duration < 1.1, f"Expected duration < 1.2 seconds, got {duration:.2f} seconds"
 
 @pytest.mark.asyncio
 async def test_async_run_success():
