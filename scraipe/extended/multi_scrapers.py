@@ -12,11 +12,11 @@ class TelegramNewsScraper(MultiScraper):
     ):
         ingress_rules = [
             IngressRule(
-                match=IngressRule.Patterns.TELEGRAM_MESSAGE,
+                r"t.me/\w+/\d+",
                 scraper=telegram_scraper
             ),
             IngressRule(
-                match=IngressRule.Patterns.ALL,
+                r".*",
                 scraper=news_scraper
             ),
         ]

@@ -33,13 +33,6 @@ class IngressRule():
         return f"IngressRule(match={self.match}, scraper={self.scraper})"
     def __repr__(self):
         return self.__str__()
-    
-    class Patterns:
-        """Predefined regex patterns for matching URLs."""
-        TELEGRAM_MESSAGE = re.compile(r"t.me/\w+/\d+")
-        """Matches telegram message links such as t.me/username/12345."""
-        ALL = re.compile(r".*")
-        """Matches all URLs."""
 
 class MultiScraper(IAsyncScraper):
     """A scraper that uses multiple ingress rules to determine how to scrape a link."""
