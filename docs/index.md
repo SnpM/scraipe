@@ -6,7 +6,7 @@
 
 ## Why use Scraipe?
 
-- **Versatile Scraping**: Scraipe integrates libraries such as `aiohttp`, `trafilatura`, and `pyrogram` to efficiently scrape telegram messages, news articles, and more.
+- **Versatile Scraping**: Scraipe integrates popular libraries such as `aiohttp`, `trafilatura`, and `pyrogram` to efficiently scrape telegram messages, news articles, and more.
 - **Speed**: Run batches of asynchronous IO-bound tasks in parallel through a simple synchronous API.
 - **Customization**: Scraipe's modular architecture allows you to easily extend or create new scrapers and analyzers.
 - **LLM Analysis**: Use LLM models to extract structured information from unstructured content.
@@ -32,38 +32,42 @@
    ```bash
    pip install scraipe
    ```
-
 2. **Example Usage**
-
     ```python
+    # Import necessary components from scraipe
+    from scraipe.defaults import DefaultScraper
+    from scraipe.defaults import TextStatsAnalyzer
     from scraipe import Workflow
-    from scraipe.extended import NewsScraper, OpenAiAnalyzer
 
-    # 1. Initialize your scraper
-    scraper = NewsScraper()
+    # Initialize the scraper and analyzer
+    scraper = DefaultScraper()
+    analyzer = TextStatsAnalyzer()
 
-    # 2. Define an instruction for the analyzer
-    instruction = '''
-    Extract a list of celebrities mentioned in the article text.
-    Return a JSON dictionary with the schema: {"celebrities": ["celebrity1", "celebrity2", ...]}
-    '''
-    analyzer = OpenAiAnalyzer("YOUR_OPENAI_API_KEY", instruction)
-
-    # 3. Create and run your workflow
+    # Create the workflow instance
     workflow = Workflow(scraper, analyzer)
-    news_links = ["https://example.com/article1", "https://example.com/article2"]
-    workflow.scrape(news_links)
+
+    # List urls to scrape
+    urls = [
+        "https://example.com",
+        "https://rickandmortyapi.com/api/character/1",
+        "https://ckaestne.github.io/seai/"
+    ]
+
+    # Run the workflow
+    workflow.scrape(urls)
     workflow.analyze()
 
-    # 4. Export results
-    export_df = workflow.export()
-    export_df.to_csv('celebrities.csv', index=False)
+    # Print the results
+    results = workflow.export()
+    print(results)
     ```
 
 ---
 
-## Getting Help
+## Explore
 
-If you encounter any issues or have questions, please visit our [GitHub repository](https://github.com/SnpM/scraipe) and open an issue.
+Check out the following resources to get familiar with Scraipe:
 
-Happy scraping and analyzing!
+- [Basic Workflow](./get_started/basic_workflow.md)
+- [Custom Scrapers and Analyzers](./advanced_usage/custom_components.md)
+- [MultiScarper for dynamic link routing](./advanced_usage/multi_scraper.md)

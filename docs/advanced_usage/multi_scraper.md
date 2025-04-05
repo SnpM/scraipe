@@ -1,6 +1,6 @@
 # MultiScraper Tutorial
 
-This tutorial explains how to use and extend the MultiScraper for scraping multiple types of URLs.
+This tutorial explains how to use and extend the [MultiScraper][scraipe.extended.MultiScraper] for scraping multiple types of URLs.
 
 ## Overview
 

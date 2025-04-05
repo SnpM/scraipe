@@ -1,1 +1,2 @@
 - [Welcome to Scraipe](../index.md)
+- [Basic Workflow](./basic_workflow.md)

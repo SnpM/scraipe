@@ -1,9 +1,9 @@
 # Import necessary components from scraipe
-from scraipe.defaults.default_scraper import DefaultScraper
-from scraipe.defaults.text_stats_analyzer import TextStatsAnalyzer
-from scraipe.workflow import Workflow
+from scraipe.defaults import DefaultScraper
+from scraipe.defaults import TextStatsAnalyzer
+from scraipe import Workflow
 
-# Initialize the default scraper and analyzer
+# Initialize the scraper and analyzer
 scraper = DefaultScraper()
 analyzer = TextStatsAnalyzer()
 

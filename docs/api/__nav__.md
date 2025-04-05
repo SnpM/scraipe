@@ -3,7 +3,6 @@
 * [classes](classes.md)
 * [defaults](defaults/index.md)
     * [default_scraper](defaults/default_scraper.md)
-    * [examples](defaults/examples.md)
     * [text_stats_analyzer](defaults/text_stats_analyzer.md)
 * [extended](extended/index.md)
     * [aiohttp_scraper](extended/aiohttp_scraper.md)
