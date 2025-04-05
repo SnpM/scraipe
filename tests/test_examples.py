@@ -1,5 +1,5 @@
 import pytest
-from scraipe.defaults.example_scraper import ExampleScraper
+from scraipe.defaults.examples import ExampleScraper
 
 def test_scrape_success():
     # ...existing test setup...

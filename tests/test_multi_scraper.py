@@ -37,22 +37,15 @@ class TestMultiScraper(unittest.TestCase):
     def test_rule_success(self):
         # When the URL matches an ingress rule that uses a successful scraper
         url = "http://example.com/match"
-        rule = IngressRule(re.compile(r"match"), DummySuccessScraper())
-        # Provide a fallback (which should not be used)
-        ms = MultiScraper([rule], fallback_scraper=DummyFailureScraper(), preserve_errors=False)
+        rules = [
+            IngressRule(re.compile(r"match"), DummySuccessScraper()),
+            IngressRule(re.compile(r"fail"), DummyFailureScraper()) 
+        ]
+        ms = MultiScraper(rules, preserve_errors=False)
         result = asyncio.run(ms.async_scrape(url))
         self.assertTrue(result.scrape_success)
         self.assertEqual(result.data, "success")
     
-    def test_fallback_success(self):
-        # When no ingress rule matches, fallback should be used.
-        url = "http://example.com/no-match"
-        # Rule that never matches by using a pattern that does not match the URL
-        rule = IngressRule(re.compile(r"nomatchpattern"), DummyFailureScraper())
-        ms = MultiScraper([rule], fallback_scraper=DummySuccessScraper(), preserve_errors=False)
-        result = asyncio.run(ms.async_scrape(url))
-        self.assertTrue(result.scrape_success)
-        self.assertEqual(result.data, "success")
     
     def test_preserve_errors(self):
         # When all scrapers fail and preserve_errors is True,
@@ -60,7 +53,7 @@ class TestMultiScraper(unittest.TestCase):
         url = "http://example.com/fail"
         rule1 = IngressRule(re.compile(r"fail"), DummyFailureScraper())
         rule2 = IngressRule(re.compile(r"fail"), DummyFailureScraper())
-        ms = MultiScraper([rule1, rule2], fallback_scraper=DummyFailureScraper(), preserve_errors=True, error_delimiter="|")
+        ms = MultiScraper([rule1, rule2], preserve_errors=True, error_delimiter="|")
         result = asyncio.run(ms.async_scrape(url))
         self.assertFalse(result.scrape_success)
         self.assertIn("DummyFailureScraper: failed", result.scrape_error)
