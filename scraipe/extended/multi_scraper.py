@@ -41,7 +41,6 @@ class MultiScraper(IAsyncScraper):
     ingress_rules: List[IngressRule]
     def __init__(self,
         ingress_rules: List[IngressRule],
-        fallback_scraper: IScraper = None,
         preserve_errors: bool = False,
         error_delimiter: str = "; "
     ):
@@ -50,15 +49,13 @@ class MultiScraper(IAsyncScraper):
 
         Args:
             ingress_rules (list[IngressRule]): A list of ingress rules.
-            fallback_scraper (IScraper, optional): A fallback scraper to use if no rules succeed.
-            preserve_errors (bool, optional): Whether to preserve errors from the ingress chain even if the scrape is successful.
+            preserve_errors (bool, optional): Whether to preserve errors from the ingress chain when the scrape is successful.
+            error_delimiter (str, optional): The delimiter to use for concatenating error messages.
         """
         super().__init__()
         assert isinstance(ingress_rules, list), "ingress_rules must be a list of IngressRule"
         assert all(isinstance(rule, IngressRule) for rule in ingress_rules), "All items in ingress_rules must be IngressRule instances"
         self.ingress_rules = ingress_rules
-        assert isinstance(fallback_scraper, IScraper), "fallback_scraper must be an instance of IScraper"
-        self.fallback_scraper = fallback_scraper
         assert isinstance(preserve_errors, bool), "preserve_errors must be a boolean"
         self.preserve_errors = preserve_errors
         assert isinstance(error_delimiter, str), "error_delimiter must be a string"
@@ -95,12 +92,6 @@ class MultiScraper(IAsyncScraper):
                 if result.scrape_success:
                     successful_result = result
                     break
-                
-        # Use fallback scraper if no rules succeeded
-        if not successful_result:
-            result = use_scraper(self.fallback_scraper)
-            if result.scrape_success:
-                successful_result = result
         
         if successful_result:
             if self.preserve_errors:
@@ -108,7 +99,7 @@ class MultiScraper(IAsyncScraper):
                 result.scrape_error = self.error_delimiter.join(ingress_chain_fails)
             return result
 
-        # If ingress rules and fallback don't succeed, return a failure result
-        result = ScrapeResult.fail(url, f"No scraper could handle {url}:")
+        # If ingress rules don't succeed, return a failure result
+        result = ScrapeResult.fail(url, f"No scraper could handle {url}: ")
         result.scrape_error += self.error_delimiter.join(ingress_chain_fails)
         return result

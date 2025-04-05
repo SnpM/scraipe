@@ -1,3 +1,5 @@
+#Based on https://mkdocstrings.github.io/recipes/#automatic-code-reference-pages
+
 import os
 import argparse
 import mkdocs_gen_files

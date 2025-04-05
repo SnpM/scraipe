@@ -1,2 +1,2 @@
 - [Custom Components](custom_components.md)
-- [Custom Link Routing](multi_scraper.md)
+- [MultiScraper](multi_scraper.md)

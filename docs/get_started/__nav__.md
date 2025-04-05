@@ -1,1 +1,1 @@
-- [Welcome to Scraipe](welcome.md)
+- [Welcome to Scraipe](../index.md)

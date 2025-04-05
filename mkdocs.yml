@@ -20,7 +20,7 @@ theme:
 nav:
   - Get Started: get_started/
   - API Documentation: api/
-  - Advanced: advanced/
+  - Advanced Usage: advanced_usage/
 docs_dir: docs
 
 markdown_extensions:
