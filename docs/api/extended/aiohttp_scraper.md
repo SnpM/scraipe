@@ -1,0 +1,1 @@
+::: scraipe.extended.aiohttp_scraper

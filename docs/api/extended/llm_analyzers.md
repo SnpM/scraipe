@@ -1,0 +1,1 @@
+::: scraipe.extended.llm_analyzers

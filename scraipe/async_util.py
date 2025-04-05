@@ -206,7 +206,7 @@ class AsyncManager:
         return await AsyncManager._executor.async_run(coro)
 
     @staticmethod
-    async def async_run_multiple(tasks: List[Awaitable[Any]], max_workers=10) -> AsyncGenerator[Any, None]:
+    async def async_run_multiple(tasks: List[Awaitable[Any]], max_workers:int=10) -> AsyncGenerator[Any, None]:
         """
         Run multiple coroutines in parallel using the underlying executor.
         Limits the number of concurrent tasks to max_workers.
@@ -224,7 +224,7 @@ class AsyncManager:
             yield await completed
 
     @staticmethod
-    def run_multiple(tasks: List[Awaitable[Any]], max_workers=10) -> Generator[Any, None, None]:
+    def run_multiple(tasks: List[Awaitable[Any]], max_workers:int=10) -> Generator[Any, None, None]:
         """
         Run multiple coroutines in parallel using the underlying executor.
         Block calling thread and yield results as they complete.

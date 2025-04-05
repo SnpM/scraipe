@@ -1,0 +1,1 @@
+::: scraipe.extended.news_scraper

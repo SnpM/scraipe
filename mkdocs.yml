@@ -1,0 +1,41 @@
+site_name: Scraipe
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+
+nav:
+  - Get Started: get_started/
+  - API Documentation: api/
+  - Advanced: advanced/
+docs_dir: docs
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+
+plugins:
+  - section-index
+  - search:
+      lang: en
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          options:
+            members_order: source
+            separate_signature: true
+            filters: ["!^_"]
+            docstring_options:
+              ignore_init_summary: true
+            merge_init_into_class: true
+            show_signature_annotations: true
+            show_source: false
+  - literate-nav:
+      nav_file: __nav__.md

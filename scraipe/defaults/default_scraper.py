@@ -4,8 +4,8 @@ from bs4 import BeautifulSoup
 
 class DefaultScraper(IScraper):
     """The default scraper that pulls the content of a webpage using requests and filters out html tags."""
-    DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
     def __init__(self, headers=None):
+        DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
         self.headers = headers or {"User-Agent": DefaultScraper.DEFAULT_USER_AGENT}
     
     def scrape(self, url:str)->ScrapeResult:

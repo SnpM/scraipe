@@ -1,0 +1,1 @@
+::: scraipe.defaults.text_stats_analyzer
