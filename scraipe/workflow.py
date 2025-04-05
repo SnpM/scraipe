@@ -182,7 +182,7 @@ class Workflow:
             self.store[row["link"]] = record
         self.logger.info(f"Updated {len(state_store_df)} records.")
     
-    def export(self) -> pd.DataFrame:
+    def export(self, verbose=False) -> pd.DataFrame:
         """Export links and unnested outputs."""
         records = self.store.values()
         pretty_df = pd.DataFrame()
@@ -190,9 +190,12 @@ class Workflow:
         # Add link column
         pretty_df["link"] = [record.link for record in records]
         
-        # Add success columns for scrape and analysis
-        pretty_df["scrape_success"] = [record.scrape_result.scrape_success if record.scrape_result else False for record in records]
-        pretty_df["analysis_success"] = [record.analysis_result.analysis_success if record.analysis_result else False for record in records]
+        if verbose:
+            # Add success and error columns
+            pretty_df["scrape_success"] = [record.scrape_result.scrape_success if record.scrape_result else False for record in records]
+            pretty_df["scrape_error"] = [record.scrape_result.scrape_error if record.scrape_result else None for record in records]
+            pretty_df["analysis_success"] = [record.analysis_result.analysis_success if record.analysis_result else False for record in records]
+            pretty_df["analysis_error"] = [record.analysis_result.analysis_error if record.analysis_result else None for record in records]
         
         outputs = [record.analysis_result.output if record.analysis_result else None for record in records]
         # output column contains dictionary or None. Unnest it

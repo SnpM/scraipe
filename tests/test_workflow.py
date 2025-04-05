@@ -64,6 +64,4 @@ def test_export(workflow):
     export_df = workflow.export()
     assert len(export_df) == 2
     assert "link" in export_df.columns
-    assert "scrape_success" in export_df.columns
-    assert "analysis_success" in export_df.columns
     assert "summary" in export_df.columns
