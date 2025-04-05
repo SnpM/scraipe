@@ -1,19 +1,16 @@
----
-title: Welcome to Scraipe
----
+# Scraipe
 
-# Scraipe Documentation
-
-Welcome to the official documentation for **Scraipe**, a high performance scraping and analysis framework with built-in LLM integration.
+**Scraipe** is a high performance scraping and analysis framework.
 
 ---
 
 ## Why use Scraipe?
 
-- **Versatile Scraping**: Efficient scrapers for Telegram messages, news articles, and more.
-- **Asynchronous Performance**: Leverage async IO-bound tasks through a simple, synchronous API.
+- **Versatile Scraping**: Scraipe integrates libraries such as `aiohttp`, `trafilatura`, and `pyrogram` to efficiently scrape telegram messages, news articles, and more.
+- **Speed**: Run batches of asynchronous IO-bound tasks in parallel through a simple synchronous API.
 - **Customization**: Scraipe's modular architecture allows you to easily extend or create new scrapers and analyzers.
-- **LLM-powered Analysis**: Seamless integration with OpenAI models plus built-in Pydantic validation of LLM outputs.
+- **LLM Analysis**: Use LLM models to extract structured information from unstructured content.
+- **Pydantic Validation**: Ensure the format of component and LLM outputs with built-in Pydantic integration.
 - **Workflow Management**: Streamline scraping and analysis in one fault-tolerant workflow.
 - **Jupyter Friendly**: Scraipe workflows are ergonomic in the notebook environment.
 

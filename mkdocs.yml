@@ -4,7 +4,19 @@ theme:
   features:
     - navigation.tabs
     - navigation.tabs.sticky
-
+  palette:
+    - scheme: slate
+      primary: indigo
+      accent: amber
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+    - scheme: default
+      primary: indigo
+      accent: amber
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
 nav:
   - Get Started: get_started/
   - API Documentation: api/
