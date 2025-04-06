@@ -1,0 +1,1 @@
+::: scraipe.extended.telegram_news_scraper

@@ -6,7 +6,7 @@ import mkdocs_gen_files
 from pathlib import Path
 def generate_package_docs(
     package_path: str,
-    output_dir:str
+    output_dir:str,
 ):
     """
     Scan for Python files in the given package path and generate a mkdocs file with docstring reference.
@@ -21,8 +21,6 @@ def generate_package_docs(
     src = Path(package_path)
     root = Path(".")
     nav = mkdocs_gen_files.Nav()
-    # Create the output directory if it doesn't exist
-    os.makedirs(root, exist_ok=True)
 
     for path in sorted(src.rglob("*.py")):
         module_path = path.relative_to(src).with_suffix("")
@@ -62,4 +60,10 @@ if __name__ == "__main__":
     args = Mock()
     args.package_path = "scraipe"
     args.output_dir = "api"
+    
+    # Delete docs/api before generating new docs
+    if os.path.exists(args.output_dir):
+        import shutil
+        print(f"Deleting existing docs in {args.output_dir}")
+        shutil.rmtree(args.output_dir)
     generate_package_docs(args.package_path, args.output_dir)

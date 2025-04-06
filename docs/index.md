@@ -27,7 +27,7 @@
    pip install scraipe[extended]
    ```
 
-   Or install the core package to build your own extensions:
+   Or install the core package to build your own components:
    
    ```bash
    pip install scraipe
