@@ -9,16 +9,16 @@ homepage = "https://github.com/snpm/scraipe"
 
 [tool.poetry.dependencies]
 python = ">=3.10,"  # Correct placement of Python version requirement
-requests = "*"
 pydantic = ">=2.10.6"
 pandas = ">=2.2.3"
 tqdm = "*"
 bs4 = "0.0.2"
+aiohttp = { version = ">=3.11.16"}
+
 
 # scraipe[extended] dependencies
 openai = {version = "1.68.2", optional = true}
 trafilatura = { version = "2.0.0", markers = "python_version < '4'" , optional = true }
-aiohttp = { version = "3.11.16", optional = true }
 pyrogram = { version = "2.0.106", optional = true }
 tgcrypto = { version = "1.2.5", optional = true }
 
@@ -26,7 +26,6 @@ tgcrypto = { version = "1.2.5", optional = true }
 extended = [
     "pyrogram", "tgcrypto",
     "trafilatura", "openai",
-    "aiohttp"
     ]
 
 [tool.poetry.group.dev.dependencies]
