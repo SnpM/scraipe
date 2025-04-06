@@ -41,4 +41,4 @@ class TextStatsAnalyzer(IAnalyzer):
             "average_word_length": avg_word_length,
         }
         
-        return AnalysisResult.success(stats)
+        return AnalysisResult.succeed(stats)

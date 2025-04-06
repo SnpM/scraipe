@@ -10,7 +10,7 @@ class ExampleScraper(IScraper):
             return ScrapeResult.fail(url, "Hacker detected!")
         # Simulate a successful scrape; simply returns the url
         content = f"I'm simply returning the {url}"
-        return ScrapeResult.success(url, content)
+        return ScrapeResult.succeed(url, content)
     
 #============================================================
 # ExampleAnalyzer
@@ -25,4 +25,4 @@ class ExampleAnalyzer(IAnalyzer):
         # Simulate a successful analysis; reverses the content
         result = content[::-1]
         output = {"reversed_content": result}
-        return AnalysisResult.success(output)
+        return AnalysisResult.succeed(output)

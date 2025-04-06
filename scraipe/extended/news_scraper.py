@@ -37,6 +37,6 @@ class NewsScraper(IAsyncScraper):
             if not content:
                 return ScrapeResult.fail(url,f"No content extracted from {url}."
                 )
-            return ScrapeResult.success(url,content)
+            return ScrapeResult.succeed(url,content)
         except Exception as e:
             return ScrapeResult.fail(url,f"Exception while scraping {url}: {e}")

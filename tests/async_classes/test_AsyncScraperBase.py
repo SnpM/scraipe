@@ -7,7 +7,7 @@ from scraipe.async_classes import IAsyncScraper
 class DummyScraper(IAsyncScraper):
     async def async_scrape(self, url: str) -> ScrapeResult:
         # Dummy implementation returning a simple ScrapeResult
-        return ScrapeResult.success(link=url, content=f"content for {url}")
+        return ScrapeResult.succeed(link=url, content=f"content for {url}")
 
 @pytest.mark.asyncio
 async def test_async_scrape():

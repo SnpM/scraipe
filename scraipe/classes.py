@@ -12,13 +12,22 @@ class ScrapeResult(BaseModel):
     scrape_success:bool
     scrape_error:str = None
     
+    @property
+    def success(self) -> bool:
+        """Returns True if the scrape was successful."""
+        return self.scrape_success
+    @property
+    def error(self) -> str:
+        """Returns the error message if the scrape failed."""
+        return self.scrape_error
+    
     def __str__(self):
         return f"ScrapeResult(link={self.link}, content={self.content}, success={self.scrape_success}, error={self.scrape_error})"
     def __repr__(self):
         return str(self)
     
     @staticmethod
-    def success(link: str, content: str) -> 'ScrapeResult':
+    def succeed(link: str, content: str) -> 'ScrapeResult':
         """Creates a ScrapeResult for a successful scrape."""
         return ScrapeResult(
             link=link,
@@ -41,13 +50,22 @@ class AnalysisResult(BaseModel):
     analysis_success:bool
     analysis_error:str = None
     
+    @property
+    def success(self) -> bool:
+        """Returns True if the analysis was successful."""
+        return self.analysis_success
+    @property
+    def error(self) -> str:
+        """Returns the error message if the analysis failed."""
+        return self.analysis_error
+    
     def __str__(self):
         return f"AnalysisResult(output={self.output}, success={self.analysis_success}, error={self.analysis_error})"
     def __repr__(self):
         return str(self)
     
     @staticmethod
-    def success(output:dict) -> 'AnalysisResult':
+    def succeed(output:dict) -> 'AnalysisResult':
         """Creates an AnalysisResult for a successful run."""
         return AnalysisResult(
             analysis_success=True,

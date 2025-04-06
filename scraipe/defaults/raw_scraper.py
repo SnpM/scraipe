@@ -44,6 +44,6 @@ class RawScraper(IAsyncScraper):
                     if response.status != 200:
                         return ScrapeResult.fail(url, f"Failed to scrape {url}. Status code: {response.status}")
                     text = await response.text()
-                    return ScrapeResult.success(url, text)
+                    return ScrapeResult.succeed(url, text)
         except Exception as e:
             return ScrapeResult.fail(url, f"Failed to scrape {url}. Error: {e}")

@@ -33,7 +33,6 @@ markdown_extensions:
   - pymdownx.superfences
 
 plugins:
-  - section-index
   - search:
       lang: en
   - mkdocstrings:

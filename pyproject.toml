@@ -27,6 +27,9 @@ extended = [
     "pyrogram", "tgcrypto",
     "trafilatura", "openai",
     ]
+gemini = [
+    ""
+]
 
 [tool.poetry.group.dev.dependencies]
 pytest = "*"

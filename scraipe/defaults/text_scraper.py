@@ -48,6 +48,6 @@ class TextScraper(IAsyncScraper):
                     soup = BeautifulSoup(text, "html.parser")
                     content = soup.get_text()
                     content = "\n".join([line for line in content.split("\n") if line.strip() != ""])
-                    return ScrapeResult.success(url, content)
+                    return ScrapeResult.succeed(url, content)
         except Exception as e:
             return ScrapeResult.fail(url, f"Failed to scrape {url}. Error: {e}")

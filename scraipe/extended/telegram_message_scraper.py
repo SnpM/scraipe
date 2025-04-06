@@ -63,7 +63,7 @@ class TelegramMessageScraper(IAsyncScraper):
         except Exception as e:
             return ScrapeResult.fail(url,f"Failed to scrape {url}. Error: {e}")
         
-        return ScrapeResult.success(url, content)
+        return ScrapeResult.succeed(url, content)
     
         
     def disconnect(self):

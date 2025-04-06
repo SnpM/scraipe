@@ -33,6 +33,7 @@ def generate_package_docs(
             parts = parts[:-1]
             doc_path = doc_path.with_name("index.md")
             full_doc_path = full_doc_path.with_name("index.md")
+            continue # Don't document packages
         elif parts[-1] == "__main__":
             continue
         

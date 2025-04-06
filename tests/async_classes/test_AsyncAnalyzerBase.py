@@ -7,7 +7,7 @@ class DummyAnalyzer(IAsyncAnalyzer):
     async def async_analyze(self, content: str) -> AnalysisResult:
         # Dummy implementation returning a simple AnalysisResult
         output = {"analysis": f"analysis for {content}"}
-        return AnalysisResult.success(output=output)
+        return AnalysisResult.succeed(output=output)
 
 @pytest.mark.asyncio
 async def test_async_analyze():
