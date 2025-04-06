@@ -19,7 +19,7 @@ Make sure scraipe is installed. Scraipe requires python 3.10 or greater.
 
 Our basic workflow will built-in components:
 
-- [`DefaultScraper`][scraipe.defaults.DefaultScraper] gets the content of a website and strips out html tags.
+- [`TextScraper`][scraipe.defaults.TextScraper] gets the content of a website and strips out html tags.
 - [`TextStatsAnalyzer`][scraipe.defaults.TextStatsAnalyzer] computes word count, character count, sentence count, and average word length.
 
 []()
@@ -28,7 +28,7 @@ Our basic workflow will built-in components:
 
     ```python
     # Import necessary components from scraipe
-    from scraipe.defaults.default_scraper import DefaultScraper
+    from scraipe.defaults.default_scraper import TextScraper
     from scraipe.defaults.text_stats_analyzer import TextStatsAnalyzer
     from scraipe.workflow import Workflow
     ```
@@ -37,7 +37,7 @@ Our basic workflow will built-in components:
 
     ```python
     # Initialize the scraper and analyzer
-    scraper = DefaultScraper()
+    scraper = TextScraper()
     analyzer = TextStatsAnalyzer()
 
     # Create the workflow instance
