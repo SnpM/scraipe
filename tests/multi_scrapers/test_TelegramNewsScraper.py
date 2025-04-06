@@ -1,6 +1,6 @@
 import re
 import pytest
-from scraipe.extended.multi_scrapers import TelegramNewsScraper
+from scraipe.extended.telegram_news_scraper import TelegramNewsScraper
 from scraipe.classes import ScrapeResult, IScraper
 
 # ...existing imports if any...
