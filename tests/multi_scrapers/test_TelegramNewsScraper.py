@@ -90,10 +90,10 @@ async def test_aiohttp_fallback():
         telegram_scraper=DummyFailureScraper(),
         news_scraper=DummyFailureScraper(),
         text_scraper=DummyAiohttpScraper(),
-        preserve_errors=True,
+        debug=True,
     )
     result = await scraper.async_scrape(url)
     assert result.scrape_success
     assert result.content == "Aiohttp content"
     # Check that errors from failing scrapers are present.
-    assert "DummyFailureScraper: failed" in result.scrape_error
+    assert "DummyFailureScraper[FAIL]: failed" in result.scrape_error

@@ -8,7 +8,18 @@ import re
 class IngressRule():
     """
     A rule that defines how to handle a specific type of URL.
-    It contains a match string and a scraper to use for that match.
+
+    Attributes:
+        match (re.Pattern): A compiled regular expression used to match URLs.
+        scraper (IScraper): An instance of a scraper to be used when the URL matches.
+
+    Methods:
+        __init__(match: str | re.Pattern, scraper: IScraper):
+            Initializes the ingress rule by compiling the match string if needed and setting the scraper.
+        __str__():
+            Returns a human-readable string representation of the ingress rule.
+        __repr__():
+            Returns a string representation of the ingress rule.
     """
     match:str
     scraper:IScraper
@@ -35,31 +46,45 @@ class IngressRule():
         return self.__str__()
 
 class MultiScraper(IAsyncScraper):
-    """A scraper that uses multiple ingress rules to determine how to scrape a link."""
+    """
+    A scraper that uses multiple ingress rules to determine how to scrape a link.
+
+    Attributes:
+        DEFAULT_USER_AGENT (str): Default User-Agent used for HTTP requests.
+        ingress_rules (List[IngressRule]): A list of ingress rule instances.
+        debug (bool): Indicates whether debug mode is enabled.
+        debug_delimiter (str): The delimiter used to join debug log messages.
+
+    Methods:
+        __init__(ingress_rules: List[IngressRule], debug: bool = False, debug_delimiter: str = "; "):
+            Initializes the MultiScraper with a list of ingress rules and optional debug settings.
+        async_scrape(url: str) -> ScrapeResult:
+            Asynchronously scrapes the given URL using the first matching ingress rule.
+            Returns a ScrapeResult indicating success or failure.
+    """
     DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
         
     ingress_rules: List[IngressRule]
     def __init__(self,
         ingress_rules: List[IngressRule],
-        preserve_errors: bool = False,
-        error_delimiter: str = "; "
+        debug: bool = False,
+        debug_delimiter: str = "; "
     ):
         """
         Initialize the MultiScraper with ingress rules.
 
         Args:
             ingress_rules (list[IngressRule]): A list of ingress rules.
-            preserve_errors (bool, optional): Whether to preserve errors from the ingress chain when the scrape is successful.
-            error_delimiter (str, optional): The delimiter to use for concatenating error messages.
+            
         """
         super().__init__()
         assert isinstance(ingress_rules, list), "ingress_rules must be a list of IngressRule"
         assert all(isinstance(rule, IngressRule) for rule in ingress_rules), "All items in ingress_rules must be IngressRule instances"
         self.ingress_rules = ingress_rules
-        assert isinstance(preserve_errors, bool), "preserve_errors must be a boolean"
-        self.preserve_errors = preserve_errors
-        assert isinstance(error_delimiter, str), "error_delimiter must be a string"
-        self.error_delimiter = error_delimiter
+        assert isinstance(debug, bool), "debug must be a boolean"
+        self.debug = debug
+        assert isinstance(debug_delimiter, str), "debug_delimtier must be a string"
+        self.debug_delimiter = debug_delimiter
 
     async def async_scrape(self, url: str) -> ScrapeResult:
         """
@@ -71,16 +96,20 @@ class MultiScraper(IAsyncScraper):
         Returns:
             ScrapeResult: The result of the scrape.
         """
-        ingress_chain_fails = []        
-        def use_scraper(scraper: IScraper) -> ScrapeResult:
+        debug_chain = []      
+        async def use_scraper(scraper: IScraper) -> ScrapeResult:
             """Use the provided scraper to scrape the URL and save the error message if it fails."""
             if isinstance(scraper, IAsyncScraper):
                 async_scraper = cast(IAsyncScraper, scraper)
-                result = async_scraper.async_scrape(url)
+                result = await async_scraper.async_scrape(url)
             else:
                 result = scraper.scrape(url)
-            if not result.scrape_success:
-                ingress_chain_fails.append(f"{scraper}: {result.scrape_error}")
+            if result.scrape_success:
+                # Log the successful scrape
+                debug_chain.append(f"{scraper}[SUCCESS]")
+            else:
+                # If the scraper fails, append the error message to the debug chain
+                debug_chain.append(f"{scraper}[FAIL]: {result.scrape_error}")
             return result
                 
         successful_result = None
@@ -88,18 +117,18 @@ class MultiScraper(IAsyncScraper):
         for rule in self.ingress_rules:
             if re.search(rule.match, url):
                 # If the rule matches, use the associated scraper
-                result = use_scraper(rule.scraper)
+                result = await use_scraper(rule.scraper)
                 if result.scrape_success:
                     successful_result = result
                     break
         
         if successful_result:
-            if self.preserve_errors:
-                # Even if successful, store the failure messages for debugging
-                result.scrape_error = self.error_delimiter.join(ingress_chain_fails)
-            return result
+            if self.debug:
+                # Even if successful, store the debug chain in result
+                successful_result.scrape_error = self.debug_delimiter.join(debug_chain)
+            return successful_result
 
         # If ingress rules don't succeed, return a failure result
-        result = ScrapeResult.fail(url, f"No scraper could handle {url}: ")
-        result.scrape_error += self.error_delimiter.join(ingress_chain_fails)
+        error_message = f"No scraper could handle {url}{self.debug_delimiter}{self.debug_delimiter.join(debug_chain)}"
+        result = ScrapeResult.fail(url, error_message)
         return result
