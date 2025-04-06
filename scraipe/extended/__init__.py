@@ -15,6 +15,6 @@ except ImportError:
 
 if _AVAILABLE:
     from scraipe.extended.telegram_message_scraper import TelegramMessageScraper
-    from scraipe.extended.multi_scraper import MultiScraper
     from scraipe.extended.news_scraper import NewsScraper
     from scraipe.extended.llm_analyzers import OpenAiAnalyzer
+    from scraipe.extended.telegram_news_scraper import TelegramNewsScraper

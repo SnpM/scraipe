@@ -2,7 +2,7 @@ import re
 import asyncio
 import unittest
 
-from scraipe.extended.multi_scraper import MultiScraper, IngressRule
+from scraipe.defaults.multi_scraper import MultiScraper, IngressRule
 from scraipe.classes import IScraper, ScrapeResult
 
 # Dummy ScrapeResult for testing purposes

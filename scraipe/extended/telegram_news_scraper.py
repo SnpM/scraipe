@@ -1,4 +1,4 @@
-from scraipe.extended.multi_scraper import MultiScraper, IngressRule
+from scraipe.defaults.multi_scraper import MultiScraper, IngressRule
 from scraipe.classes import IScraper
 
 class TelegramNewsScraper(MultiScraper):
