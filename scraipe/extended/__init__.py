@@ -1,9 +1,14 @@
+"""
+The `extended` package provides additional scrapers and analyzers for advanced use cases.
+It includes tools for scraping Telegram messages, news articles, and performing LLM-based analysis.
+Dependencies for this package can be installed using `pip install scraipe[extended]`.
+"""
+
 _AVAILABLE = False
 try:
     import telethon
     import trafilatura
     import openai
-    import aiohttp
     _AVAILABLE = True
 except ImportError:
     raise "Missing dependencies. Install with `pip install scraipe[extended]`."
