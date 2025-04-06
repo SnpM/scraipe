@@ -1,6 +1,6 @@
 from scraipe.extended.llm_analyzers.llm_analyzer_base import LlmAnalyzerBase
 
-# Try openai
+# Import OpenAiAnalyzer
 try:
     import openai
 except ImportError: 
@@ -8,4 +8,10 @@ except ImportError:
 else:
     from scraipe.extended.llm_analyzers.openai_analyzer import OpenAiAnalyzer
 
-# Try gemini
+# Import GeminiAnalyzer
+try:
+    import google.genai
+except ImportError:
+    print("Gemini API is not available. Please install the google.genai package.")
+else:
+    from scraipe.extended.llm_analyzers.gemini_analyzer import GeminiAnalyzer

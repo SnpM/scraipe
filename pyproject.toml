@@ -22,14 +22,15 @@ trafilatura = { version = "2.0.0", markers = "python_version < '4'" , optional =
 pyrogram = { version = "2.0.106", optional = true }
 tgcrypto = { version = "1.2.5", optional = true }
 
+# More optional dependencies for LLMs
+google-genai = { version = ">=1.9.0", optional = true }
+
 [tool.poetry.extras]
 extended = [
     "pyrogram", "tgcrypto",
     "trafilatura", "openai",
+    "google-genai"
     ]
-gemini = [
-    ""
-]
 
 [tool.poetry.group.dev.dependencies]
 pytest = "*"
