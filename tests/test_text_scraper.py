@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch, MagicMock, AsyncMock  # added import for asynchronous mocks
-from scraipe.defaults.TextScraper import TextScraper
+from scraipe.defaults.text_scraper import TextScraper
 from scraipe import ScrapeResult, AnalysisResult
 
 TARGET_MODULE = TextScraper.__module__
