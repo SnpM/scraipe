@@ -1,4 +1,4 @@
 - [Custom Components](custom_components.md)
 - [MultiScraper Guide](multi_scraper_guide.md)
 - [Async Architecture](./async_architecture.md)
-- [LLM Analyzers](./llm_analyzers_guide.md)
+- [Extending LlmAnalyzerBase](./extending_llm_analyzer_base.md)

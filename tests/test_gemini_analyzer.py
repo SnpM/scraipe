@@ -57,7 +57,7 @@ async def test_analyze_live(live_analyzer):
 @pytest.mark.asyncio
 async def test_query_llm(analyzer):
     dummy_text = '{"location": "Paris"}'
-    with patch.object(analyzer.client.models, 'generate_content', return_value=DummyResponse(dummy_text)):
+    with patch.object(analyzer.client.aio.models, 'generate_content', return_value=DummyResponse(dummy_text)):
         result = await analyzer.query_llm(TEST_CONTENT, TEST_INSTRUCTION)
         assert result == dummy_text
 

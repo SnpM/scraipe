@@ -1,3 +1,4 @@
 - [Welcome to Scraipe](../index.md)
 - [Basic Workflow](./basic_workflow.md)
 - [Bundled Components](./bundled_components.md)
+- [LLM Analyzers](./using_llm_analyzers.md)
