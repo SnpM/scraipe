@@ -3,7 +3,7 @@ from scraipe.async_classes import IAsyncScraper
 import aiohttp
 
 class RawScraper(IAsyncScraper):
-    """Asynchronous raw scraper that retrieves webpage content as plain text.
+    """Asynchronous scraper that retrieves webpage content in raw text format.
 
     Uses aiohttp to perform HTTP GET requests.
 

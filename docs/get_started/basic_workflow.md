@@ -63,7 +63,7 @@ Our basic workflow will built-in components:
     print(results)
     ```
 
-Running [our workflow script](https://github.com/SnpM/scraipe/blob/main/examples/basic_workflow.py), will print a Pandas dataframe containing our extracted text stats for each link.
+Running [our workflow script](https://github.com/SnpM/scraipe/blob/main/examples/basic_workflow.py) will print a Pandas dataframe containing text stats for each link.
 
 ```bash
 $ python basic_workflow.py 

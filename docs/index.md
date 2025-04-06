@@ -66,7 +66,7 @@
 
 ## Explore
 
-Check out the following resources to get familiar with Scraipe:
+Check out the following resources to get more familiar with Scraipe:
 
 - [Basic Workflow](./get_started/basic_workflow.md)
 - [Custom Scrapers and Analyzers](./advanced_usage/custom_components.md)
