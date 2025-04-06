@@ -16,10 +16,10 @@ class ExampleScraper(IScraper):
             return ScrapeResult.fail(url, "Hacker detected!")
         # Simulate a successful scrape; simply returns the url
         content = f"I'm simply returning the {url}"
-        return ScrapeResult.success(url, content)
+        return ScrapeResult.succeed(url, content)
 ```
 
-The `scrape()` method should return an instance of [`ScrapeResult`][scraipe.classes.ScrapeResult] that can be created via `ScrapeResult.fail() `or `ScrapeResult.success()`.
+The `scrape()` method should return an instance of [`ScrapeResult`][scraipe.classes.ScrapeResult] that can be created via `ScrapeResult.fail() `or `ScrapeResult.succeed()`.
 
 To facilitate fault tolerance, `scrape()` implementations should not raise exceptions. Instead, debug and error information can be stored in `ScrapeResult.scrape_error`, a field that is set when you call `ScrapeResult.fail()`.
 
@@ -38,17 +38,55 @@ class ExampleAnalyzer(IAnalyzer):
         # Simulate a successful analysis; reverses the content
         result = content[::-1]
         output = {"reversed_content": result}
-        return AnalysisResult.success(output)
+        return AnalysisResult.succeed(output)
 ```
 
-The `analyze()` method should return an instance of [`AnalysisResult`][scraipe.classes.AnalysisResult] that can be created via `AnalysisResult.fail() `or `AnalysisResult.success()`.
+The `analyze()` method should return an instance of [`AnalysisResult`][scraipe.classes.AnalysisResult] that can be created via `AnalysisResult.fail() `or `AnalysisResult.succeed()`.
 
 Similar to `IScraper.scrape()` implementations, `analyze()` should not raise exceptions. Instead, any errors or debug information should be captured in the `AnalysisResult` object, which can be set using `AnalysisResult.fail()`.
 
 ## Async Scrapers and Analyzers
 
-[`IAsyncScraper`][scraipe.async_classes.IAsyncScraper] and [`IAsyncAnalyzer`][scraipe.async_classes.IAsyncAnalyzer] provide the respective `async_scrape()` and `async_analyze()` methods. Instead of implementing custom logic in synchronous functions, you can write lightning fast asynchronous code using these async interfaces.
+Scraping and analyzing often require IO-bound operations such as waiting for responses from the web. These operations should be optimized to run in parallel using asynchronous logic. Implementing asynchronous logic for components adds very little complexity. Instead of extending `IScraper` or `IAnalyzer`, simply extend the `IAsyncScraper` and `IAsyncAnalyzer` interfaces.
 
-The synchronous integration is seamless. A call to `IAsyncScraper.scrape_multiple()` from a synchronous context will automatically use [`AsyncManager`][scraipe.async_util.AsyncManager] to run `IAsyncScraper.async_scrape()` for all links asynchronously and progressively yield the results as they complete.
+For async scrapers, implement `async_scrape()` using asynchronous code:
 
-[AiohttpScraper](https://github.com/SnpM/scraipe/blob/main/scraipe/extended/aiohttp_scraper.py) and [LlmAnalyzerBase](https://github.com/SnpM/scraipe/blob/main/scraipe/extended/llm_analyzers.py) are examples of how to extend the async interfaces.
+```python
+import asyncio
+from scraipe.async_classes import IAsyncScraper, IAsyncAnalyzer
+class AsyncExampleScraper(IAsyncScraper):
+    """An asynchronous example scraper implementation for example."""
+    async def async_scrape(self, url: str) -> ScrapeResult:
+        # Simulate waiting for a response
+        await asyncio.sleep(1)
+        
+        # Fail if url is malicious!
+        if "hacker" in url:
+            return ScrapeResult.fail(url, "Hacker detected!")
+        # Simulate a successful scrape; simply returns the url asynchronously
+        content = f"I'm asynchronously returning the {url}"
+        return ScrapeResult.succeed(url, content)
+```
+
+For async analyzers, implement `async_analyze()` using asynchronous code:
+
+```python
+import asyncio
+from scraipe.async_classes import ScrapeResult, AnalysisResult
+class AsyncExampleAnalyzer(IAsyncAnalyzer):
+    """An asynchronous example analyzer implementation for example."""
+    async def async_analyze(self, content: str) -> AnalysisResult:
+        # Simulate waiting for analysis
+        await asyncio.sleep(1)
+        
+        # Fail if content is malicious!
+        if "hacker" in content:
+            return AnalysisResult.fail("Hacker detected!")
+        # Simulate a successful analysis; reverses the content
+        result = content[::-1]
+        output = {"reversed_content": result}
+        return AnalysisResult.succeed(output)
+```
+
+
+[TextScraper][scraipe.defaults.TextScraper] and [LlmAnalyzerBase][scraipe.extended.llm_analyzers.LlmAnalyzerBase] are more complete examples of asynchronous components. Check out [Async Architecture](./async_architecture.md) to learn more about asynchronous orchestration in Scraipe's synchronous API.

@@ -79,4 +79,4 @@ Analyzing: 100%|█████████████████████�
 
 ## Conclusion
 
-We created a basic workflow to orchestrate web scraping and text stats extraction. Next up, check out [bundled scrapers and analyzers](./built_in_components.md) or learn how to [create custom components](../advanced_usage/custom_components.md) for your project's specific needs.
+We created a basic workflow to orchestrate web scraping and text stats extraction. Next up, check out [bundled scrapers and analyzers](./bundled_components.md) or learn how to [create custom components](../advanced_usage/custom_components.md) for your project's specific needs.

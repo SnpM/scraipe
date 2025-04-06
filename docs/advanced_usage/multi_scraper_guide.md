@@ -1,4 +1,4 @@
-# MultiScraper Tutorial
+# MultiScraper Guide
 
 [`MultiScraper`][scraipe.defaults.multi_scraper] handles links by delegating scrape requests to appropriate scrapers based on customizable ingress rules. It's designed for flexible and fault-tolerant scraping.
 
@@ -53,16 +53,9 @@ This page explains how to tailor `MultiScraper` for specific links.
     mu
     ```
 
-## Extending MultiScraper
-
-1. **Custom Ingress Rules**  
-   Craft an ingress rules to assign links to specific scrapers for your project's needs.
-
-2. **Custom Scraper Implementations**  
-   Extend `IScraper` or `IAsyncScraper` to implement your [custom scraping logic](./custom_components.md).
-
 ## Tips
 
 - Test each custom scraper in isolation before integrating it with MultiScraper.
 - Enable error preservation during development to capture and debug failure chains.
-- Leverage [built-in scrapers] provided by Scraipe.
+- Leverage [built-in scrapers](../get_started/bundled_components.md) provided by Scraipe.
+- Extend `IScraper` or `IAsyncScraper` to implement your [custom scraping logic](./custom_components.md).

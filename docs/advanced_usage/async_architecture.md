@@ -26,10 +26,12 @@ Executors manage the execution of asynchronous tasks. Scraipe provides two imple
 The `AsyncManager` is a static utility that abstracts the complexity of running asynchronous tasks. It's essentially a static wrapper for an instance of an executor.
 
 It provides the following functions for async integration.
+
 - `run()`: Executes a coroutine and blocks until it completes.
 - `run_multiple()`: Executes multiple coroutines concurrently and yields results as they complete.
 
 Additionally, class's executor can be configured:
+
 - `set_executor()`: Allows switching between executor instances.
 - `enable_multithreading()`: Enables multithreading by switching the executor to an instance of `EventLoopPoolExecutor`.
 - `disable_multithreading()`: Disables multithreading by switching the executor to an instance of `DefaultBackgroundExecutor`.
