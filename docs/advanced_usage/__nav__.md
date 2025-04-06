@@ -1,2 +1,3 @@
 - [Custom Components](custom_components.md)
 - [MultiScraper](multi_scraper.md)
+- [Async Architecture](./async_architecture.md)

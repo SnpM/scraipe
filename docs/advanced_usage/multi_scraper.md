@@ -1,15 +1,15 @@
 # MultiScraper Tutorial
 
-This tutorial explains how to use and extend the [MultiScraper][scraipe.extended.MultiScraper] for scraping multiple types of URLs.
+This tutorial explains how to use and extend the [`MultiScraper`][scraipe.defaults.multi_scraper] to process diverse links.
 
 ## Overview
 
-MultiScraper is designed to handle links by delegating the scrape request to appropriate scrapers based on predefined ingress rules. If none of the rules match, a fallback scraper is used. This design allows flexible and fault-tolerant scraping.
+`MultiScraper` handles links by delegating scrape requests to appropriate scrapers based on predefined ingress rules. It's designed for flexible and fault-tolerant scraping.
 
 ## How It Works
 
-- **Ingress Rules**: Each rule consists of a regex pattern and an associated scraper. If a URL matches the pattern, the corresponding scraper is used.
-- **Fallback Scraper**: A scraper that is used when none of the ingress rules succeed.
+- **Ingress Rules**: Each [`IngressRule`][scraipe.defaults.multi_scraper.IngressRule] consists of a regex pattern and an associated scraper. If a link matches the pattern, the corresponding scraper is used.
+- **Rule Processing**: The rules are processed in order. If a rule succeeds, its result is immediately returned. If the rule passes or fails, subsequent rules have the opportunity to match and scrape the links.
 - **Error Preservation**: When enabled, errors from failed scraping attempts are preserved for debugging.
 
 ## Usage
@@ -34,41 +34,36 @@ MultiScraper is designed to handle links by delegating the scrape request to app
         ),
     ]
     ```
+2. **Creating the MultiScraper**  
 
-2. **Creating MultiScraper**  
-   Pass a list of ingress rules and a fallback scraper when creating an instance of `MultiScraper`:
-   ```python
-   multi_scraper = MultiScraper(ingress_rules=ingress_rules, fallback_scraper=aiohttp_scraper)
-   ```
+    Pass a list of ingress rules and a fallback scraper when creating an instance of `MultiScraper`:
 
+    ```python
+    # Pass ingress rules into a new MultiScraper
+    multi_scraper = MultiScraper(ingress_rules=ingress_rules)
+    ```
+    []()
 3. **Scraping a URL**  
-   Use the `async_scrape` method to scrape a URL:
-   ```python
-   result = await multi_scraper.async_scrape("https://example.com")
-   if result.scrape_success:
-       print("Scrape successful:", result.data)
-   else:
-       print("Scrape failed:", result.scrape_error)
-   ```
-
-## Example: Defining Ingress Rules
-
+    Use the `async_scrape` method to scrape a URL:
+    
+    ```python
+    result = await multi_scraper.async_scrape("https://example.com")
+    if result.scrape_success:
+        print("Scrape successful:", result.data)
+    else:
+        print("Scrape failed:", result.scrape_error)
+    ```
 
 ## Extending MultiScraper
 
 1. **Custom Ingress Rules**  
-   You can extend the functionality by creating new ingress rules that match specific URL patterns and assign custom scrapers.
+   Craft an ingress rules to assign links to specific scrapers for your project's needs.
 
 2. **Custom Scraper Implementations**  
-   Create a new scraper by extending `IScraper` or `IAsyncScraper` to implement your custom scraping logic.
-
-3. **Integration with Other Components**  
-   Combine MultiScraper with custom analyzers to process the scraped data further. See the [Custom Components](./custom_components.md) tutorial for more details.
+   Extend `IScraper` or `IAsyncScraper` to implement your [custom scraping logic](./custom_components.md).
 
 ## Tips
 
 - Test each custom scraper in isolation before integrating it with MultiScraper.
-- Enable error preservation during development to capture and debug failures.
-- Extend ingress rules easily by matching new URL patterns with your custom scrapers.
-
-Happy scraping!
+- Enable error preservation during development to capture and debug failure chains.
+- Leverage [built-in scrapers] provided by Scraipe.
