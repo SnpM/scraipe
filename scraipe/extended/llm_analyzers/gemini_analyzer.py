@@ -44,7 +44,7 @@ class GeminiAnalyzer(LlmAnalyzerBase):
         )
         
         # Generate content using the Gemini API
-        response = self.client.models.generate_content(
+        response = await self.client.aio.models.generate_content(
             model=self.model,
             contents=[content],
             config=config
