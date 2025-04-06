@@ -4,11 +4,13 @@ from bs4 import BeautifulSoup
 import aiohttp
 
 class TextScraper(IAsyncScraper):
-    """Pulls the content of a webpage and returns the html-stripped text.
-    
-    This asynchronous scraper utilizes aiohttp for HTTP requests and BeautifulSoup to parse HTML.
-    It fetches the webpage content, parses out HTML tags, removes extra whitespace, and returns a
-    ScrapeResult object indicating the success or failure of the scraping process.
+    """Asynchronous text scraper that extracts visible text from HTML.
+
+    Fetches webpage content using aiohttp and parses the HTML with BeautifulSoup.
+
+    Attributes:
+        DEFAULT_USER_AGENT (str): Default User-Agent string for HTTP requests.
+        headers (dict): HTTP headers used in fetching the webpage content.
     """
     
     DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
@@ -25,15 +27,16 @@ class TextScraper(IAsyncScraper):
         self.headers = headers or TextScraper.headers
         
     async def async_scrape(self, url: str) -> ScrapeResult:
-        """
-        Asynchronously scrapes the given URL by making an HTTP GET request and processing the HTML content.
-        
-        :param url: The URL to scrape.
-        :return: A ScrapeResult object containing:
-                 - link: the provided URL,
-                 - content: the text extracted from the HTML (if successful),
-                 - scrape_success: a boolean indicating if the operation succeeded,
-                 - scrape_error: an error message if the scrape failed.
+        """Scrape a webpage asynchronously and extract visible text.
+
+        Args:
+            url (str): URL of the webpage to be scraped.
+
+        Returns:
+            ScrapeResult: Result containing the URL, extracted text content, success flag, and error if any.
+
+        Raises:
+            Exception: Propagates exceptions encountered during scraping.
         """
         try:
             async with aiohttp.ClientSession(headers=self.headers) as session:
