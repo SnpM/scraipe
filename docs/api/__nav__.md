@@ -1,13 +1,16 @@
 * [async_classes](async_classes.md)
 * [async_util](async_util.md)
 * [classes](classes.md)
-* [defaults](defaults/index.md)
+* defaults
     * [multi_scraper](defaults/multi_scraper.md)
     * [raw_scraper](defaults/raw_scraper.md)
     * [text_scraper](defaults/text_scraper.md)
     * [text_stats_analyzer](defaults/text_stats_analyzer.md)
-* [extended](extended/index.md)
-    * [llm_analyzers](extended/llm_analyzers.md)
+* extended
+    * llm_analyzers
+        * [gemini_analyzer](extended/llm_analyzers/gemini_analyzer.md)
+        * [llm_analyzer_base](extended/llm_analyzers/llm_analyzer_base.md)
+        * [openai_analyzer](extended/llm_analyzers/openai_analyzer.md)
     * [news_scraper](extended/news_scraper.md)
     * [telegram_message_scraper](extended/telegram_message_scraper.md)
     * [telegram_news_scraper](extended/telegram_news_scraper.md)

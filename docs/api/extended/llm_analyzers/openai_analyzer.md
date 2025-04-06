@@ -1,0 +1,1 @@
+::: scraipe.extended.llm_analyzers.openai_analyzer

@@ -1,5 +1,5 @@
 # Bundled Components
-Scraipe features a powerful set of scrapers and analyzers that we are continuously expanding.
+Scraipe features a powerful collection of scrapers and analyzers that we are continuously expanding.
 
 Components with a caret^ require dependencies in the `scraipe[extended]` subpackage.
 
@@ -15,7 +15,8 @@ Components with a caret^ require dependencies in the `scraipe[extended]` subpack
 ## Analyzers
 
 - **[`TextStatsAnalyzer^`][scraipe.defaults.TextStatsAnalyzer]**: Computes text statistics such as word count, character count, sentence count, and average word length.
-- **[`OpenAiAnalyzer^`][scraipe.extended.OpenAiAnalyzer]**: Uses OpenAI's API to analyze content based on a provided instruction and optional schema validation.
+- **[`OpenAiAnalyzer^`][scraipe.extended.llm_analyzers.OpenAiAnalyzer]**: Uses OpenAI's API to analyze content based on a provided instruction and optional schema validation.
+- **[`GeminiAnalyzer^`][scraipe.extended.llm_analyzers.GeminiAnalyzer]**: Integrates Google Gemini's API to analyze content based on instruction and mandatory schema validation. 
 
 ---
 
