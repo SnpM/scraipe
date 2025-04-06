@@ -1,5 +1,5 @@
 # Default scrapers
-from scraipe.defaults.default_scraper import DefaultScraper
+from scraipe.defaults.TextScraper import TextScraper
 
 # Default analyzers
 from scraipe.defaults.text_stats_analyzer import TextStatsAnalyzer

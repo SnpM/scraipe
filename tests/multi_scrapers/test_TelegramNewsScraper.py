@@ -63,7 +63,7 @@ async def test_telegram_rule_success():
     scraper = TelegramNewsScraper(
         telegram_scraper=DummyTelegramScraper(),
         news_scraper=DummyNewsScraper(),
-        aiohttp_scraper=DummyAiohttpScraper()
+        text_scraper=DummyAiohttpScraper()
     )
     result = await scraper.async_scrape(url)
     assert result.scrape_success
@@ -76,7 +76,7 @@ async def test_news_rule_success():
     scraper = TelegramNewsScraper(
         telegram_scraper=DummyFailureScraper(),
         news_scraper=DummyNewsScraper(),
-        aiohttp_scraper=DummyAiohttpScraper()
+        text_scraper=DummyAiohttpScraper()
     )
     result = await scraper.async_scrape(url)
     assert result.scrape_success
@@ -89,7 +89,7 @@ async def test_aiohttp_fallback():
     scraper = TelegramNewsScraper(
         telegram_scraper=DummyFailureScraper(),
         news_scraper=DummyFailureScraper(),
-        aiohttp_scraper=DummyAiohttpScraper(),
+        text_scraper=DummyAiohttpScraper(),
         preserve_errors=True,
     )
     result = await scraper.async_scrape(url)
