@@ -1,2 +1,3 @@
 - [Welcome to Scraipe](../index.md)
 - [Basic Workflow](./basic_workflow.md)
+- [Bundled Components](./built_in_components.md)

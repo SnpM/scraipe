@@ -5,7 +5,9 @@ For background, Scraipe uses interfaces to define scraping and analysis logic:
 - [`IScraper`][scraipe.classes.IScraper]: Fetches and extracts content from a link.
 - [`IAnalyzer`][scraipe.classes.IAnalyzer]: Extracts structured information from content (e.g., with an LLM)
 
-The [`Workflow`][scraipe.workflow.Workflow] class orchestrates scrapers and analyzers in one persistent process. For a complete example using [NewsScraper][scraipe.extended.NewsScraper] and [OpenAiAnalyzer][scraipe.extended.OpenAiAnalyzer], check out [celebrities_example.ipynb](https://github.com/SnpM/scraipe/blob/main/examples/celebrities_example.ipynb). Continue reading for a basic example.
+The [`Workflow`][scraipe.workflow.Workflow] class orchestrates scrapers and analyzers in one persistent process.
+
+Check out [celebrities_example.ipynb](https://github.com/SnpM/scraipe/blob/main/examples/celebrities_example.ipynb) for an advanced workflow using [`NewsScraper`][scraipe.extended.NewsScraper] and [`OpenAiAnalyzer`][scraipe.extended.OpenAiAnalyzer]. Continue reading for a basic example.
 
 ## Setup
 
@@ -17,14 +19,14 @@ Make sure scraipe is installed. Scraipe requires python 3.10 or greater.
 
 ## Basic Example
 
-Our basic workflow will built-in components:
+Our basic workflow will use two standard components:
 
-- [`TextScraper`][scraipe.defaults.TextScraper] gets the content of a website and strips out html tags.
-- [`TextStatsAnalyzer`][scraipe.defaults.TextStatsAnalyzer] computes word count, character count, sentence count, and average word length.
+- [`TextScraper`][scraipe.defaults.TextScraper]: gets the content of a website and strips out html tags.
+- [`TextStatsAnalyzer`][scraipe.defaults.TextStatsAnalyzer]: computes word and sentence statistics.
 
 []()
 
-1. Import dependencies
+1. Import dependencies.
 
     ```python
     # Import necessary components from scraipe
@@ -33,7 +35,7 @@ Our basic workflow will built-in components:
     from scraipe.workflow import Workflow
     ```
 
-2. Configure the workflow
+2. Configure the workflow.
 
     ```python
     # Initialize the scraper and analyzer
@@ -44,7 +46,7 @@ Our basic workflow will built-in components:
     workflow = Workflow(scraper, analyzer)
     ```
 
-3. Run the workflow on links
+3. Run the workflow on links.
 
     ```python
     # List urls to scrape
@@ -77,4 +79,4 @@ Analyzing: 100%|█████████████████████�
 
 ## Conclusion
 
-We created a basic workflow to orchestrate web scraping and text stats extraction. Next up, check out [more scrapers and analyzers](../api/extended/index.md) or learn how to [create custom components](../advanced_usage/custom_components.md) for your project's specific needs.
+We created a basic workflow to orchestrate web scraping and text stats extraction. Next up, check out [bundled scrapers and analyzers](./built_in_components.md) or learn how to [create custom components](../advanced_usage/custom_components.md) for your project's specific needs.

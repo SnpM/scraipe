@@ -1,15 +1,13 @@
 # MultiScraper Tutorial
 
-This tutorial explains how to use and extend the [`MultiScraper`][scraipe.defaults.multi_scraper] to process diverse links.
+[`MultiScraper`][scraipe.defaults.multi_scraper] handles links by delegating scrape requests to appropriate scrapers based on customizable ingress rules. It's designed for flexible and fault-tolerant scraping.
 
-## Overview
-
-`MultiScraper` handles links by delegating scrape requests to appropriate scrapers based on predefined ingress rules. It's designed for flexible and fault-tolerant scraping.
+This page explains how to tailor `MultiScraper` for specific links.
 
 ## How It Works
 
 - **Ingress Rules**: Each [`IngressRule`][scraipe.defaults.multi_scraper.IngressRule] consists of a regex pattern and an associated scraper. If a link matches the pattern, the corresponding scraper is used.
-- **Rule Processing**: The rules are processed in order. If a rule succeeds, its result is immediately returned. If the rule passes or fails, subsequent rules have the opportunity to match and scrape the links.
+- **Rule Processing**: The rules are processed in order. If a rule succeeds, its result is immediately returned. If the rule skips or fails execution, subsequent rules have the opportunity to match and scrape the links.
 - **Error Preservation**: When enabled, errors from failed scraping attempts are preserved for debugging.
 
 ## Usage
@@ -20,17 +18,18 @@ This tutorial explains how to use and extend the [`MultiScraper`][scraipe.defaul
 
     ```python
     from scraipe.extended.multi_scraper import IngressRule
-    from scraipe.extended import NewsScraper, AiohttpScraper
+    from scraipe.extended import NewsScraper
+    from scraipe.default import MultiScraper, TextScraper
     ingress_rules = [
         # Use NewsScraper for links containing "news", "article", or "story"
         IngressRule(
             r"(news|article|story)",
             scraper=NewsScraper()
         ),
-        # Fallback to AiohttpScraper
+        # Fallback to TextScraper
         IngressRule(
             r".*",
-            scraper=AiohttpScraper()
+            scraper=TextScraper()
         ),
     ]
     ```
@@ -39,19 +38,19 @@ This tutorial explains how to use and extend the [`MultiScraper`][scraipe.defaul
     Pass a list of ingress rules and a fallback scraper when creating an instance of `MultiScraper`:
 
     ```python
-    # Pass ingress rules into a new MultiScraper
+    # Instantiate a new MultiScraper with our custom ingress rules
     multi_scraper = MultiScraper(ingress_rules=ingress_rules)
     ```
     []()
 3. **Scraping a URL**  
-    Use the `async_scrape` method to scrape a URL:
+    Use the `scrape` method to test your MultiScraper.
     
     ```python
-    result = await multi_scraper.async_scrape("https://example.com")
-    if result.scrape_success:
-        print("Scrape successful:", result.data)
-    else:
-        print("Scrape failed:", result.scrape_error)
+    # Will use NewsScraper
+    multi_scraper.scrape('apnews.com')
+
+    # Will fallback to TextScraper
+    mu
     ```
 
 ## Extending MultiScraper
