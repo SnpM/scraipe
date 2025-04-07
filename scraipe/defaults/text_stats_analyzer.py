@@ -15,7 +15,11 @@ class TextStatsAnalyzer(IAnalyzer):
             content (str): The text to be analyzed.
 
         Returns:
-            AnalysisResult: Containing the results dictionary with statistics and a success flag.
+            AnalysisResult: An object containing an output dictionary with the following keys:
+                - word_count (int): Total number of words.
+                - character_count (int): Total number of characters.
+                - sentence_count (int): Total number of sentences.
+                - average_word_length (float): Average length of words in characters.
         """
         # Use a regex pattern that allows apostrophes in words
         words = re.findall(r"\b[\w']+\b", content)

@@ -3,7 +3,7 @@ from scraipe.async_classes import IAsyncScraper
 import aiohttp
 
 class RawScraper(IAsyncScraper):
-    """Asynchronous scraper that retrieves webpage content in raw text format.
+    """Asynchronous scraper that retrieves webpage content in raw text format. The scraper performs no cleaning or parsing of the content.
 
     Uses aiohttp to perform HTTP GET requests.
 
@@ -34,9 +34,6 @@ class RawScraper(IAsyncScraper):
 
         Returns:
             ScrapeResult: Result containing the URL, raw text content, success flag, and error message if applicable.
-
-        Raises:
-            Exception: Propagates exceptions encountered during the scraping process.
         """
         try:
             async with aiohttp.ClientSession(headers=self.headers) as session:

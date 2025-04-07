@@ -33,12 +33,27 @@ class LlmAnalyzerBase(IAsyncAnalyzer):
     
     
     @abstractmethod
-    async def query_llm(self, content:str, instruction:str) -> str:
-        """Queries the OpenAI API with the content and returns the json response."""
+    async def query_llm(self, content: str, instruction: str) -> str:
+        """Queries the LLM API with the provided content and instruction.
+
+        Parameters:
+            content (str): The content to be analyzed.
+            instruction (str): The instruction describing the task for the LLM.
+
+        Returns:
+            str: A JSON-formatted string response from the LLM.
+        """
         raise NotImplementedError("This method should be implemented by subclasses.")
     
-    async def async_analyze(self, content:str) -> AnalysisResult:
-        """Analyzes the content using the LLM returns the response as a dict."""
+    async def async_analyze(self, content: str) -> AnalysisResult:
+        """Analyzes the provided content by querying the LLM and validating the response.
+
+        Parameters:
+            content (str): The content to be analyzed. It must be a non-empty string. If the content exceeds the maximum allowed size, it will be truncated.
+
+        Returns:
+            AnalysisResult: An object indicating the success or failure of the analysis. On success, the output contains the validated response data; on failure, it contains an error message.
+        """
         
         # Ensure content is a non-empty string
         if not isinstance(content, str) or len(content) == 0:

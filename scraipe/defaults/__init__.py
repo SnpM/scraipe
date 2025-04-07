@@ -1,5 +1,5 @@
 """
-This package contains default implementations of scrapers and analyzers.
+This package contains default implementations for scrapers and analyzers.
 """
 
 # Default scrapers

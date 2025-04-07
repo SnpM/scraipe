@@ -8,9 +8,18 @@ from logging import Logger
 
 @final
 class Workflow:
+    """Orchestrates scraping and analysis processes.
+    
+    Attributes:
+        scraper (IScraper): The scraper instance.
+        analyzer (IAnalyzer): The analyzer instance.
+        thread_count (int): Number of threads to use.
+        store (Dict[str, Workflow.StoreRecord]): Storage for scrape and analysis results keyed by link.
+    """
+    
     @final
     class StoreRecord:
-        """Stores the scrape and analysis results for a link."""
+        """Stores the scrape and analysis results for a specific link."""
         link:str
         scrape_result:ScrapeResult
         analysis_result:AnalysisResult
@@ -37,7 +46,14 @@ class Workflow:
         self.logger = logger if logger else logging.getLogger(__name__)
         
     def scrape(self, links:List[str], overwrite:bool=False):
-        """Scrape the content from the given links."""
+        """Scrape content from the provided links.
+        
+        Removes duplicate links and filters out those already scraped (unless 'overwrite' is True).
+        
+        Args:
+            links (List[str]): List of URLs to scrape.
+            overwrite (bool): If True, re-scrape links already present in the store.
+        """
         # Remove duplicates
         links = list(set(links))
         
@@ -75,7 +91,7 @@ class Workflow:
         self.logger.info(f"Successfully scraped {success_count}/{len(links_to_scrape)} links.")
     
     def get_scrapes(self) -> pd.DataFrame:
-        """Return a copy of the store's scrape results as a DataFrame"""
+        """Return a DataFrame copy of the stored scrape results."""
         records = self.store.values()
         scrape_results = [record.scrape_result for record in records if record.scrape_result is not None]     
         return pd.DataFrame([result.model_dump() for result in scrape_results])
@@ -83,11 +99,17 @@ class Workflow:
         
         
     def flush_store(self):
-        """Erase all the previously scraped anad analyzed content"""
+        """Erase all previously scraped and analyzed content."""
         self.store = {}
         
     def update_scrapes(self, state_store_df:pd.DataFrame):
-        """Update the store from a dataframe"""
+        """Update the scrape results store from the given DataFrame.
+        
+        Each DataFrame row should contain valid scrape result data corresponding to a link.
+        
+        Args:
+            state_store_df (pd.DataFrame): DataFrame containing scrape result information.
+        """
         for i, row in state_store_df.iterrows():
             try:
                 result = ScrapeResult(**row)
@@ -100,7 +122,11 @@ class Workflow:
         self.logger.info(f"Updated {len(state_store_df)} scrape results.")
     
     def analyze(self, overwrite:bool=False):
-        """Analyze the unanalyzed content in the scrape store."""
+        """Analyze content for links that have been successfully scraped but not yet analyzed.
+        
+        Args:
+            overwrite (bool): (Currently unused) Reserved for future re-analysis capabilities.
+        """
         # Get list of links to analyze
         links_with_content = []
         for record in self.store.values():
@@ -134,7 +160,7 @@ class Workflow:
         self.logger.info(f"Successfully analyzed {success_count}/{len(content_dict)} links.")
     
     def get_analyses(self) -> pd.DataFrame:
-        """Return a copy of the store's analysis results as a DataFrame"""
+        """Return a DataFrame copy of the stored analysis results."""
         records = self.store.values()
         rows = []
         for record in records:
@@ -146,7 +172,13 @@ class Workflow:
         return pd.DataFrame(rows)
     
     def update_analyses(self, state_store_df:pd.DataFrame):
-        """Update the store from a dataframe"""
+        """Update the analysis results store from the given DataFrame.
+        
+        Each row in the DataFrame should contain valid analysis result data for a link.
+        
+        Args:
+            state_store_df (pd.DataFrame): DataFrame containing analysis result information.
+        """
         for i, row in state_store_df.iterrows():
             try:
                 result = AnalysisResult(**row)
@@ -159,7 +191,7 @@ class Workflow:
         self.logger.info(f"Updated {len(state_store_df)} analysis results.")
     
     def get_records(self) -> pd.DataFrame:
-        """Return a copy of the store's records as a DataFrame"""
+        """Return a DataFrame copy of all stored records, including both scrape and analysis results."""
         rows = []
         for record in self.store.values():
             row = {"link": record.link}
@@ -171,7 +203,13 @@ class Workflow:
         return pd.DataFrame(rows)
     
     def update_records(self, state_store_df:pd.DataFrame):
-        """Update the store from a dataframe"""
+        """Replace the current store with records from the given DataFrame.
+        
+        The DataFrame should include columns to reconstruct both scrape and analysis records.
+        
+        Args:
+            state_store_df (pd.DataFrame): DataFrame containing complete record data.
+        """
         for i, row in state_store_df.iterrows():
             # Create a record from the row
             record = self.StoreRecord(row["link"])
@@ -183,7 +221,16 @@ class Workflow:
         self.logger.info(f"Updated {len(state_store_df)} records.")
     
     def export(self, verbose=False) -> pd.DataFrame:
-        """Export links and unnested outputs."""
+        """Export stored records as a DataFrame with unnested analysis outputs.
+        
+        If verbose is True, include extra metadata such as success flags and error messages.
+        
+        Args:
+            verbose (bool): If True, include additional columns for detailed status.
+            
+        Returns:
+            pd.DataFrame: A DataFrame containing exported records.
+        """
         records = self.store.values()
         pretty_df = pd.DataFrame()
         

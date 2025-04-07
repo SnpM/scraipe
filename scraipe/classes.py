@@ -14,21 +14,39 @@ class ScrapeResult(BaseModel):
     
     @property
     def success(self) -> bool:
-        """Returns True if the scrape was successful."""
+        """Indicates whether the scraping operation was successful.
+        
+        Returns:
+            bool: True if scraping succeeded; otherwise False.
+        """
         return self.scrape_success
+    
     @property
     def error(self) -> str:
-        """Returns the error message if the scrape failed."""
+        """Provides the error message if the scraping operation failed. May also contain debug information for successful scrapes.
+        
+        Returns:
+            str: The error message when scraping fails, or None if successful.
+        """
         return self.scrape_error
     
     def __str__(self):
         return f"ScrapeResult(link={self.link}, content={self.content}, success={self.scrape_success}, error={self.scrape_error})"
+    
     def __repr__(self):
         return str(self)
     
     @staticmethod
     def succeed(link: str, content: str) -> 'ScrapeResult':
-        """Creates a ScrapeResult for a successful scrape."""
+        """Creates a ScrapeResult instance for a successful scraping operation.
+        
+        Args:
+            link (str): The URL that was scraped.
+            content (str): The content fetched from the URL.
+        
+        Returns:
+            ScrapeResult: An instance with scrape_success set to True.
+        """
         return ScrapeResult(
             link=link,
             content=content,
@@ -37,7 +55,15 @@ class ScrapeResult(BaseModel):
     
     @staticmethod
     def fail(link: str, error: str) -> 'ScrapeResult':
-        """Creates a ScrapeResult for a failed scrape."""
+        """Creates a ScrapeResult instance for a failed scraping operation.
+        
+        Args:
+            link (str): The URL attempted.
+            error (str): The error message describing the failure.
+        
+        Returns:
+            ScrapeResult: An instance with scrape_success set to False.
+        """
         return ScrapeResult(
             link=link,
             scrape_success=False,
@@ -52,29 +78,53 @@ class AnalysisResult(BaseModel):
     
     @property
     def success(self) -> bool:
-        """Returns True if the analysis was successful."""
+        """Indicates whether the analysis operation was successful.
+        
+        Returns:
+            bool: True if analysis succeeded; otherwise False.
+        """
         return self.analysis_success
+    
     @property
     def error(self) -> str:
-        """Returns the error message if the analysis failed."""
+        """Provides the error message if the analysis operation failed.
+        
+        Returns:
+            str: Provides the error message when analysis fails. May also contain debug information for successful analyses.
+        """
         return self.analysis_error
     
     def __str__(self):
         return f"AnalysisResult(output={self.output}, success={self.analysis_success}, error={self.analysis_error})"
+    
     def __repr__(self):
         return str(self)
     
     @staticmethod
-    def succeed(output:dict) -> 'AnalysisResult':
-        """Creates an AnalysisResult for a successful run."""
+    def succeed(output: dict) -> 'AnalysisResult':
+        """Creates an AnalysisResult instance for a successful analysis operation.
+        
+        Args:
+            output (dict): The extracted analysis data.
+        
+        Returns:
+            AnalysisResult: An instance with analysis_success set to True.
+        """
         return AnalysisResult(
             analysis_success=True,
             output=output
         )
     
     @staticmethod
-    def fail(error:str) -> 'AnalysisResult':
-        """Creates an AnalysisResult for an unsuccessful run."""
+    def fail(error: str) -> 'AnalysisResult':
+        """Creates an AnalysisResult instance for a failed analysis operation.
+        
+        Args:
+            error (str): The error message detailing the failure.
+        
+        Returns:
+            AnalysisResult: An instance with analysis_success set to False.
+        """
         return AnalysisResult(
             analysis_success=False,
             analysis_error=error
@@ -82,8 +132,15 @@ class AnalysisResult(BaseModel):
 
 class IScraper(ABC):
     @abstractmethod
-    def scrape(self, url:str)->ScrapeResult:
-        """Get content from the url"""
+    def scrape(self, url: str) -> ScrapeResult:
+        """Fetches content from the specified URL.
+        
+        Args:
+            url (str): The URL to scrape.
+        
+        Returns:
+            ScrapeResult: The result of the scraping operation.
+        """
         raise NotImplementedError()
 
     def scrape_multiple(self, urls: List[str]) -> Generator[Tuple[str, ScrapeResult], None, None]:
@@ -95,7 +152,14 @@ class IScraper(ABC):
 class IAnalyzer(ABC):
     @abstractmethod
     def analyze(self, content: str) -> AnalysisResult:
-        """Analyze the content and return the extracted information as a dict."""
+        """Analyzes the provided content to extract structured information.
+        
+        Args:
+            content (str): The text content to analyze.
+        
+        Returns:
+            AnalysisResult: The result containing analysis output or error details.
+        """
         raise NotImplementedError()
     
     def analyze_multiple(self, contents: Dict[str, str]) -> Generator[Tuple[str, AnalysisResult], None, None]:

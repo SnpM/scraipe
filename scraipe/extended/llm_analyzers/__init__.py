@@ -1,3 +1,5 @@
+"""Contains analyzers for various cloud-based LLM provider integrations."""
+
 from scraipe.extended.llm_analyzers.llm_analyzer_base import LlmAnalyzerBase
 
 # Import OpenAiAnalyzer

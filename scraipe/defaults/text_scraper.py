@@ -6,8 +6,8 @@ import aiohttp
 class TextScraper(IAsyncScraper):
     """Asynchronous text scraper that extracts visible text from HTML.
 
-    Fetches webpage content using aiohttp and parses the HTML with BeautifulSoup.
-
+    Fetches webpage content using aiohttp and parses the HTML with BeautifulSoup. Strips HTML tags.
+    
     Attributes:
         DEFAULT_USER_AGENT (str): Default User-Agent string for HTTP requests.
         headers (dict): HTTP headers used in fetching the webpage content.
@@ -34,9 +34,6 @@ class TextScraper(IAsyncScraper):
 
         Returns:
             ScrapeResult: Result containing the URL, extracted text content, success flag, and error if any.
-
-        Raises:
-            Exception: Propagates exceptions encountered during scraping.
         """
         try:
             async with aiohttp.ClientSession(headers=self.headers) as session:

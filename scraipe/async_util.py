@@ -257,7 +257,14 @@ class AsyncManager:
     @staticmethod
     def set_executor(executor: IAsyncExecutor) -> None:
         """
-        Replace the current executor with a new one.
+        Replace the current asynchronous executor used by AsyncManager with a new executor.
+        
+        Args:
+            executor: An object that implements the IAsyncExecutor interface, responsible
+                      for managing and executing asynchronous tasks.
+        
+        Returns:
+            None.
         """
         AsyncManager._executor = executor
 

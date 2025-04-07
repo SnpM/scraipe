@@ -12,20 +12,12 @@ class IngressRule():
     Attributes:
         match (re.Pattern): A compiled regular expression used to match URLs.
         scraper (IScraper): An instance of a scraper to be used when the URL matches.
-
-    Methods:
-        __init__(match: str | re.Pattern, scraper: IScraper):
-            Initializes the ingress rule by compiling the match string if needed and setting the scraper.
-        __str__():
-            Returns a human-readable string representation of the ingress rule.
-        __repr__():
-            Returns a string representation of the ingress rule.
     """
-    match:str
-    scraper:IScraper
+    match: re.Pattern
+    scraper: IScraper
     def __init__(self,
-                 match:str|re.Pattern,
-                 scraper:IScraper):
+                 match: str | re.Pattern,
+                 scraper: IScraper):
         """
         Initialize the IngressRule with a match string and a scraper.
         Args:
@@ -74,8 +66,9 @@ class MultiScraper(IAsyncScraper):
         Initialize the MultiScraper with ingress rules.
 
         Args:
-            ingress_rules (list[IngressRule]): A list of ingress rules.
-            
+            ingress_rules (list[IngressRule]): A list of IngressRule instances.
+            debug (bool, optional): Enable debug mode. Defaults to False.
+            debug_delimiter (str, optional): Delimiter for joining debug log messages. Defaults to "; ".
         """
         super().__init__()
         assert isinstance(ingress_rules, list), "ingress_rules must be a list of IngressRule"
@@ -83,7 +76,7 @@ class MultiScraper(IAsyncScraper):
         self.ingress_rules = ingress_rules
         assert isinstance(debug, bool), "debug must be a boolean"
         self.debug = debug
-        assert isinstance(debug_delimiter, str), "debug_delimtier must be a string"
+        assert isinstance(debug_delimiter, str), "debug_delimiter must be a string"
         self.debug_delimiter = debug_delimiter
 
     async def async_scrape(self, url: str) -> ScrapeResult:

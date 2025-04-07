@@ -12,7 +12,7 @@ class IAsyncScraper(IScraper):
     max_workers:int = 10
     def __init__(self, max_workers: int=10):
         """
-        Initialize the IAsyncScraperBase with a maximum number of concurrent workers.
+        Initialize the IAsyncScraper with a maximum number of concurrent workers.
         
         Args:
             max_workers (int): The maximum number of concurrent workers.
@@ -54,7 +54,7 @@ class IAsyncScraper(IScraper):
         
         Returns:
             Generator[Tuple[str, ScrapeResult], None, None]: A generator yielding tuples of URL and ScrapeResult.
-        """        
+        """
         def make_task(url):
             async def task():
                 return url, await self.async_scrape(url)
@@ -62,8 +62,6 @@ class IAsyncScraper(IScraper):
         tasks = [make_task(url) for url in urls]
         return AsyncManager.run_multiple(tasks, self.max_workers)
             
-            
-
 class IAsyncAnalyzer(IAnalyzer):
     max_workers:int = 10
     def __init__(self, max_workers: int = 10):
