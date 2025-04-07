@@ -3,9 +3,7 @@
 [![versions](https://img.shields.io/pypi/pyversions/scraipe.svg)](https://github.com/snpm/scraipe)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/SnpM/scraipe/blob/main/LICENSE)
 
-[Scraipe Documentation](https://scraipe.readthedocs.io/en/latest/)
-
-Scraipe is a high performance asynchronous scraping and analysis framework that leverages Large Language Models (LLMs) to extract structured information.
+Scraping and analysis framework.
 
 ## Features
 - **Versatile Scraping**: Leverage custom scrapers that handle Telegram messages, news articles, and links that require multiple ingress rules.
@@ -13,58 +11,59 @@ Scraipe is a high performance asynchronous scraping and analysis framework that 
 - **Workflow Management:** Combine scraping and analysis in a single fault-tolerant workflow--ideal for Jupyter notebooks.
 - **High Performance**: Asynchronous IO-bound tasks are seamlessly integrated in the synchronous API.
 - **Modular**: Extend the framework with new scrapers or analyzers as your data sources evolve.
-- **Customizable Ingress**: Easily define and update rules to route different types of links to their appropriate scrapers.
-- **Detailed Logging**: Monitor scraping and analysis operations through comprehensive logging for improved debugging and transparency.
+- **Customizable Ingress**: Easily define rules to dynamically route different links to their appropriate scrapers.
+- **Detailed Logging**: Monitor scraping and analysis operations through robust errors for improved debugging and transparency.
+
+## Help
+
+See [documentation](https://scraipe.readthedocs.io/en/latest/) for more details.
 
 ## Installation
 
-Ensure you have Python 3.10+ installed. Install Scraipe with all built-in scrapers/analyzers:
+Ensure you are using Python>=3.10. Install Scraipe and all built-in scrapers/analyzers:
 ```bash
 pip install scraipe[extended]
 ```
 
-Alternatively, install the core library and develop your own scrapers/analyzers with:
+Alternatively, install the core library with:
 ```bash
 pip install scraipe
 ```
 
-## Example Usage
+## Example
 
-   ```python
-    # Import components from scraipe
-    from scraipe.defaults import TextScraper
-    from scraipe.defaults import TextStatsAnalyzer
-    from scraipe import Workflow
+```python
+ # Import components from scraipe
+ from scraipe.defaults import TextScraper
+ from scraipe.defaults import TextStatsAnalyzer
+ from scraipe import Workflow
 
-    # Initialize the scraper and analyzer
-    scraper = TextScraper()
-    analyzer = TextStatsAnalyzer()
+ # Initialize the scraper and analyzer
+ scraper = TextScraper()
+ analyzer = TextStatsAnalyzer()
 
-    # Create the workflow instance
-    workflow = Workflow(scraper, analyzer)
+ # Create the workflow instance
+ workflow = Workflow(scraper, analyzer)
 
-    # List urls to scrape
-    urls = [
-        "https://example.com",
-        "https://rickandmortyapi.com/api/character/1",
-        "https://ckaestne.github.io/seai/"
-    ]
+ # List urls to scrape
+ urls = [
+     "https://example.com",
+     "https://rickandmortyapi.com/api/character/1",
+     "https://ckaestne.github.io/seai/"
+ ]
 
-    # Run the workflow
-    workflow.scrape(urls)
-    workflow.analyze()
+ # Run the workflow
+ workflow.scrape(urls)
+ workflow.analyze()
 
-    # Print the results
-    results = workflow.export()
-    print(results)
-    ```
+ # Print the results
+ results = workflow.export()
+ print(results)
+ ```
    
 ## Contributing
 
 Contributions are welcome. Please open an issue or submit a pull request for improvements.
-
-## License
-This project is licensed under the MIT License.
 
 ## Maintainer
 This project is maintained by [nibs](https://github.com/SnpM).
