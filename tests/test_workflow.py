@@ -1,7 +1,7 @@
 import pytest
+import pandas as pd
 from scraipe.workflow import Workflow
 from scraipe.classes import IScraper, IAnalyzer, ScrapeResult, AnalysisResult
-import pandas as pd
 
 class MockScraper(IScraper):
     def scrape(self, url):
@@ -19,49 +19,112 @@ def workflow():
     analyzer = MockAnalyzer()
     return Workflow(scraper, analyzer)
 
-def test_scrape(workflow):
-    links = ["http://example.com/valid/1", "http://example.com/valid/2"]
-    workflow.scrape(links)
-    assert len(workflow.store) == 2
-    for link in links:
-        assert workflow.store[link].scrape_result.scrape_success
+class TestScrape:
+    def test_scrape(self, workflow):
+        links = ["http://example.com/valid/1", "http://example.com/valid/2"]
+        workflow.scrape(links)
+        assert len(workflow.store) == 2
+        for link in links:
+            assert workflow.store[link].scrape_result.scrape_success
 
-def test_analyze(workflow):
-    links = ["http://example.com/valid/1", "http://example.com/valid/2"]
-    workflow.scrape(links)
-    workflow.analyze()
-    for link in links:
-        assert workflow.store[link].analysis_result.analysis_success
+class TestAnalyze:
+    def test_analyze(self, workflow):
+        links = ["http://example.com/valid/1", "http://example.com/valid/2"]
+        workflow.scrape(links)
+        workflow.analyze()
+        for link in links:
+            assert workflow.store[link].analysis_result.analysis_success
 
-def test_get_records(workflow):
-    links = ["http://example.com/valid/1", "http://example.com/valid/2"]
-    workflow.scrape(links)
-    workflow.analyze()
-    records_df = workflow.get_records()
-    assert len(records_df) == 2
-    assert "link" in records_df.columns
-    assert "scrape_success" in records_df.columns
-    assert "analysis_success" in records_df.columns
+class TestRecords:
+    def test_get_records(self, workflow):
+        links = ["http://example.com/valid/1", "http://example.com/valid/2"]
+        workflow.scrape(links)
+        workflow.analyze()
+        records_df = workflow.get_records()
+        assert len(records_df) == 2
+        for col in ["link", "scrape_success", "analysis_success"]:
+            assert col in records_df.columns
 
-def test_update_records(workflow):
-    data = {
-        "link": ["http://example.com/1"],
-        "scrape_success": [True],
-        "content": ["Updated content"],
-        "analysis_success": [True],
-        "output": [{"summary": "Updated summary"}],
-    }
-    df = pd.DataFrame(data)
-    workflow.update_records(df)
-    assert len(workflow.store) == 1
-    assert workflow.store["http://example.com/1"].scrape_result.content == "Updated content"
-    assert workflow.store["http://example.com/1"].analysis_result.output["summary"] == "Updated summary"
+    def test_update_records(self, workflow):
+        data = {
+            "link": ["http://example.com/1"],
+            "scrape_success": [True],
+            "content": ["Updated content"],
+            "analysis_success": [True],
+            "output": [{"summary": "Updated summary"}],
+        }
+        df = pd.DataFrame(data)
+        workflow.update_records(df)
+        rec = workflow.store["http://example.com/1"]
+        assert rec.scrape_result.content == "Updated content"
+        assert rec.analysis_result.output["summary"] == "Updated summary"
 
-def test_export(workflow):
-    links = ["http://example.com/valid/1", "http://example.com/valid/2"]
-    workflow.scrape(links)
-    workflow.analyze()
-    export_df = workflow.export()
-    assert len(export_df) == 2
-    assert "link" in export_df.columns
-    assert "summary" in export_df.columns
+    def test_export(self, workflow):
+        links = ["http://example.com/valid/1", "http://example.com/valid/2"]
+        workflow.scrape(links)
+        workflow.analyze()
+        export_df = workflow.export()
+        assert len(export_df) == 2
+        for col in ["link", "summary"]:
+            assert col in export_df.columns
+
+class TestUpdateScrapes:
+    def test_update_scrapes_list(self, workflow):
+        result = ScrapeResult(link="http://example.com/updated", scrape_success=True, content="List content")
+        workflow.update_scrapes([result])
+        assert workflow.store["http://example.com/updated"].scrape_result.content == "List content"
+
+    def test_update_scrapes_dict(self, workflow):
+        result = ScrapeResult(link="http://example.com/dict", scrape_success=True, content="Dict content")
+        workflow.update_scrapes({"http://example.com/dict": result})
+        assert workflow.store["http://example.com/dict"].scrape_result.content == "Dict content"
+
+    def test_update_scrapes_dataframe(self, workflow):
+        data = {
+            "link": ["http://example.com/df"],
+            "scrape_success": [True],
+            "content": ["DataFrame content"],
+            "scrape_error": [None],
+        }
+        df = pd.DataFrame(data)
+        workflow.update_scrapes(df)
+        assert workflow.store["http://example.com/df"].scrape_result.content == "DataFrame content"
+
+class TestUpdateAnalyses:
+    def test_update_analyses_dict(self, workflow):
+        result = AnalysisResult(analysis_success=True, output={"summary": "Dict analysis"})
+        workflow.update_analyses({"http://example.com/dict_analysis": result})
+        assert workflow.store["http://example.com/dict_analysis"].analysis_result.output["summary"] == "Dict analysis"
+
+    def test_update_analyses_dataframe(self, workflow):
+        data = {
+            "link": ["http://example.com/df_analysis"],
+            "analysis_success": [True],
+            "analysis_error": [None],
+            "summary": ["DataFrame analysis"],
+        }
+        df = pd.DataFrame(data)
+        workflow.update_analyses(df, output_cols=["summary"])
+        assert workflow.store["http://example.com/df_analysis"].analysis_result.output["summary"] == "DataFrame analysis"
+
+class TestClearMethods:
+    def test_clear_scrapes(self, workflow):
+        links = ["http://example.com/valid/1"]
+        workflow.scrape(links)
+        workflow.clear_scrapes()
+        for record in workflow.store.values():
+            assert record.scrape_result is None
+
+    def test_clear_analyses(self, workflow):
+        links = ["http://example.com/valid/1"]
+        workflow.scrape(links)
+        workflow.analyze()
+        workflow.clear_analyses()
+        for record in workflow.store.values():
+            assert record.analysis_result is None
+
+    def test_clear_store(self, workflow):
+        links = ["http://example.com/valid/1"]
+        workflow.scrape(links)
+        workflow.clear_store()
+        assert workflow.store == {}

@@ -5,6 +5,7 @@ from pydantic import BaseModel, ValidationError
 from tqdm import tqdm
 import logging
 from logging import Logger
+from functools import singledispatchmethod
 
 @final
 class Workflow:
@@ -31,6 +32,7 @@ class Workflow:
             return f"StoreRecord(link={self.link}, scrape_result={self.scrape_result}, analysis_result={self.analysis_result})"
         def __repr__(self):
             return str(self)
+        
     
     scraper:IScraper
     analyzer:IAnalyzer
@@ -93,30 +95,198 @@ class Workflow:
         scrape_results = [record.scrape_result for record in records if record.scrape_result is not None]     
         return pd.DataFrame([result.model_dump() for result in scrape_results])
         
+    @singledispatchmethod
+    def update_scrapes(self, data):
+        """
+        Update scrapes using different input data types.
         
+        This generic dispatcher supports updating scrape results using:
+          - A list of ScrapeResults
+          - A dictionary mapping links (str) to ScrapeResults
+          - A pandas DataFrame containing ScrapeResult fields in columns
         
-    def flush_store(self):
-        """Erase all previously scraped and analyzed content."""
-        self.store = {}
-        
-    def update_scrapes(self, state_store_df:pd.DataFrame):
-        """Update the scrape results store from the given DataFrame.
-        
-        Each DataFrame row should contain valid scrape result data corresponding to a link.
+        Raises:
+            NotImplementedError: If the data type is not supported.
+        """
+        raise NotImplementedError(f"Cannot update scrapes with data of type {type(data)}")
+    
+    @update_scrapes.register(list)
+    def _(self, data:List[ScrapeResult]):
+        """
+        Update the store's ScrapeResults with a list of ScrapeResult objects.
         
         Args:
-            state_store_df (pd.DataFrame): DataFrame containing scrape result information.
+            data (List[ScrapeResult]): List containing ScrapeResult instances.
+        
+        Side Effects:
+            Updates the internal store with the provided scrape results.
         """
-        for i, row in state_store_df.iterrows():
-            try:
-                result = ScrapeResult(**row)
-            except ValidationError as e:
-                self.logger.error(f"Failed to update scrape result {row}. Error: {e}")
-                continue
+        # Assert input type
+        assert isinstance(data, list)
+        assert all(isinstance(result, ScrapeResult) for result in data)
+        
+        for result in data:
             if result.link not in self.store:
-                self.store[result.link] = self.StoreRecord(result.link, result)
+                self.store[result.link] = self.StoreRecord(result.link)
             self.store[result.link].scrape_result = result
-        self.logger.info(f"Updated {len(state_store_df)} scrape results.")
+            self.logger.info(f"Updated scrape result for {result.link}.")
+            
+    @update_scrapes.register(dict)
+    def _(self, data:Dict[str,ScrapeResult]):
+        """
+        Update the store's ScrapeResults with a dictionary mapping links to ScrapeResult objects.
+        
+        Args:
+            data (Dict[str, ScrapeResult]): Dictionary where keys are URLs and values are ScrapeResult instances.
+        
+        Side Effects:
+            Validates that each key matches the ScrapeResult.link and updates the internal store.
+        """
+        # Assert input type
+        assert isinstance(data, dict)
+        assert all(isinstance(link, str) & isinstance(result, ScrapeResult) for link, result in data.items())
+        
+        results:List[ScrapeResult] = []
+        for link, result in data.items():
+            assert link == result.link, f"Link {link} does not match ScrapeResult link {result.link}"
+            results.append(result)
+        self.update_scrapes(results)
+            
+    @update_scrapes.register(pd.DataFrame)
+    def _(self, data:pd.DataFrame):
+        """
+        Update the store's ScrapeResults from a pandas DataFrame.
+        
+        The DataFrame contains the following columns to construct a list of ScrapeResults:
+        - 'link': The URL of the scraped content.
+        - 'scrape_success': A boolean indicating if the scrape was successful.
+        - 'scrape_error': The error message if the scrape failed; mandatory if 'scrape_success' is False.
+        - 'content': The content scraped from the URL.
+        
+        Args:
+            data (pd.DataFrame): DataFrame containing scrape result information.
+        
+        Side Effects:
+            Attempts to create ScrapeResult from each DataFrame row and updates the internal store.
+        """
+        # Assert input type
+        assert isinstance(data, pd.DataFrame)
+        assert all(col in data.columns for col in ["link", "scrape_success", "scrape_error", "content"])
+        
+        # Create a ScrapeResult from each row
+        # If it fails, log the error and continue
+        print(data)
+        results:List[ScrapeResult] = []
+        for i, row in data.iterrows():
+            try:
+                result = ScrapeResult(
+                    link=row["link"],
+                    scrape_success=row["scrape_success"],
+                    scrape_error=row["scrape_error"],
+                    content=row["content"]
+                )
+            except ValidationError as e:
+                print("asdf")
+                self.logger.info(f"Failed to update scrape result {row}. Error: {e}")
+            else:
+                results.append(result)
+        self.update_scrapes(results)
+        
+    @singledispatchmethod
+    def update_analyses(self, data, output_cols:List[str]=None):
+        """
+        Update analyses using different input data types.
+        
+        This generic dispatcher supports updating analysis results using:
+          - A dictionary mapping links (str) to AnalysisResult objects
+          - A pandas DataFrame containing a 'links' column and AnalysisResult information
+        
+        Raises:
+            NotImplementedError: If the data type is not supported.
+        """
+        raise NotImplementedError(f"Cannot update analyses with data of type {type(data)}")
+    
+    @update_analyses.register(dict)
+    def _(self, data:Dict[str,AnalysisResult]):
+        """
+        Update the store's AnalysisResults with a dictionary mapping links to AnalysisResult objects.
+        Args:
+            data (Dict[str, AnalysisResult]): Dictionary where keys are links and values are AnalysisResult instances.
+        Side Effects:
+            Validates that each key matches the AnalysisResult.link and updates the internal store.
+        """
+        # Assert types of input
+        assert isinstance(data, dict)
+        assert all(isinstance(link, str) & isinstance(result, AnalysisResult) for link, result in data.items())
+        
+        for link, result in data.items():
+            if link not in self.store:
+                self.store[link] = self.StoreRecord(link)
+            self.store[link].analysis_result = result
+            self.logger.info(f"Updated analysis result for {link}.")
+            
+    @update_analyses.register(pd.DataFrame)
+    def _(self, data:pd.DataFrame, output_cols:List[str]):
+        """
+        Update the store's AnalysisResults from a pandas DataFrame.
+        
+        The DataFrame should contain the following columns;
+        - 'link': The URL of the scraped content.
+        - 'analysis_success': A boolean indicating if the analysis was successful.
+        - 'analysis_error': The error message if the analysis failed; mandatory if 'analysis_success' is False.
+        - Columns corresponding to output_cols: The output extracted from analysis.
+
+        
+        Args:
+            data (pd.DataFrame): DataFrame containing analysis result information.
+        
+        Side Effects:
+            Attempts to create AnalysisResult from each DataFrame row and updates the internal store.
+        """
+        # Assert input type
+        assert isinstance(data, pd.DataFrame)
+        assert all(col in data.columns for col in ["link", "analysis_success", "analysis_error"] + output_cols)
+        
+        # Try to create an AnalysisResult from each row
+        link_result_map:Dict[str, AnalysisResult] = {}
+        for i, row in data.iterrows():
+            link = row["link"]
+            # Extract outputs dictionary from output_cols
+            output = {col: row[col] for col in output_cols}
+            # Just set output to None if all values are None
+            if all(value is None for value in output.values()):
+                output = None
+            try:
+                # Create AnalysisResult
+                result = AnalysisResult(
+                    analysis_success=row["analysis_success"],
+                    analysis_error=row["analysis_error"],
+                    output=output
+                )
+            except ValidationError as e:
+                self.logger.info(f"Failed to update analysis result {row}. Error: {e}")
+            else:
+                link_result_map[link] = result
+                
+        # Update the store with the link-result mapping
+        self.update_analyses(link_result_map)
+        
+    def clear_scrapes(self):
+        """Clear all ScrapeResults from the store."""
+        for record in self.store.values():
+            record.scrape_result = None
+        self.logger.info("Cleared all scrape results.")
+        
+    def clear_analyses(self):
+        """Clear all AnalysisResults from the store."""
+        for record in self.store.values():
+            record.analysis_result = None
+        self.logger.info("Cleared all analysis results.")
+        
+    def clear_store(self):
+        """Erase all records of scraped and analyzed content."""
+        self.store = {}
+        self.logger.info("Flushed all records from the store.")
     
     def analyze(self, overwrite:bool=False):
         """Analyze content for links that have been successfully scraped but not yet analyzed.
@@ -167,25 +337,6 @@ class Workflow:
                 row.update(record.analysis_result.model_dump())
             rows.append(row)
         return pd.DataFrame(rows)
-    
-    def update_analyses(self, state_store_df:pd.DataFrame):
-        """Update the analysis results store from the given DataFrame.
-        
-        Each row in the DataFrame should contain valid analysis result data for a link.
-        
-        Args:
-            state_store_df (pd.DataFrame): DataFrame containing analysis result information.
-        """
-        for i, row in state_store_df.iterrows():
-            try:
-                result = AnalysisResult(**row)
-            except ValidationError as e:
-                self.logger.info(f"Failed to update analysis result {row}. Error: {e}")
-                continue
-            if result.link not in self.store:
-                self.store[result.link] = self.StoreRecord(result.link)
-            self.store[result.link].analysis_result = result
-        self.logger.info(f"Updated {len(state_store_df)} analysis results.")
     
     def get_records(self) -> pd.DataFrame:
         """Return a DataFrame copy of all stored records, including both scrape and analysis results."""
