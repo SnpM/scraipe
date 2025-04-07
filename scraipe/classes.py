@@ -8,9 +8,9 @@ class ScrapeResult(BaseModel):
     
     # Note: It's recommended to use success() and fail() methods to create instances of ScrapeResult.
     link: str
-    content:str = None
+    content:str|None = None
     scrape_success:bool
-    scrape_error:str = None
+    scrape_error:str|None = None
     
     @property
     def success(self) -> bool:
@@ -81,9 +81,9 @@ class ScrapeResult(BaseModel):
 
 @final
 class AnalysisResult(BaseModel):
-    output:dict = None
+    output:dict|None = None
     analysis_success:bool
-    analysis_error:str = None
+    analysis_error:str|None = None
     
     @property
     def success(self) -> bool:
