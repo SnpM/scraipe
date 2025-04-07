@@ -35,39 +35,6 @@ class TestAnalyze:
         for link in links:
             assert workflow.store[link].analysis_result.analysis_success
 
-class TestRecords:
-    def test_get_records(self, workflow):
-        links = ["http://example.com/valid/1", "http://example.com/valid/2"]
-        workflow.scrape(links)
-        workflow.analyze()
-        records_df = workflow.get_records()
-        assert len(records_df) == 2
-        for col in ["link", "scrape_success", "analysis_success"]:
-            assert col in records_df.columns
-
-    def test_update_records(self, workflow):
-        data = {
-            "link": ["http://example.com/1"],
-            "scrape_success": [True],
-            "content": ["Updated content"],
-            "analysis_success": [True],
-            "output": [{"summary": "Updated summary"}],
-        }
-        df = pd.DataFrame(data)
-        workflow.update_records(df)
-        rec = workflow.store["http://example.com/1"]
-        assert rec.scrape_result.content == "Updated content"
-        assert rec.analysis_result.output["summary"] == "Updated summary"
-
-    def test_export(self, workflow):
-        links = ["http://example.com/valid/1", "http://example.com/valid/2"]
-        workflow.scrape(links)
-        workflow.analyze()
-        export_df = workflow.export()
-        assert len(export_df) == 2
-        for col in ["link", "summary"]:
-            assert col in export_df.columns
-
 class TestUpdateScrapes:
     def test_update_scrapes_list(self, workflow):
         result = ScrapeResult(link="http://example.com/updated", scrape_success=True, content="List content")
@@ -128,3 +95,65 @@ class TestClearMethods:
         workflow.scrape(links)
         workflow.clear_store()
         assert workflow.store == {}
+
+class TestScrapeOverwrite:
+    def test_scrape_overwrite(self, workflow):
+        links = ["http://example.com/valid/1"]
+        # Initial scrape to populate the store
+        workflow.scrape(links)
+        # Artificially modify the content
+        workflow.store["http://example.com/valid/1"].scrape_result.content = "Modified content"
+        # Re-scrape with overwrite enabled
+        workflow.scrape(links, overwrite=True)
+        # Assert that the content is reset to the expected mocked content
+        assert workflow.store["http://example.com/valid/1"].scrape_result.content == "Mocked content"
+
+class TestStoreOperations:
+    def test_get_scrapes(self, workflow):
+        links = ["http://example.com/valid/1", "http://example.com/valid/2"]
+        workflow.scrape(links)
+        df = workflow.get_scrapes()
+        assert not df.empty
+        assert "link" in df.columns
+        for link in links:
+            assert link in df["link"].tolist()
+            
+    def test_get_analyses(self, workflow):
+        links = ["http://example.com/valid/1", "http://example.com/valid/2"]
+        workflow.scrape(links)
+        workflow.analyze()
+        df = workflow.get_analyses()
+        assert not df.empty
+        assert "link" in df.columns
+        for link in links:
+            assert not df[df["link"] == link].empty
+            
+    def test_dump_and_load_store(self, workflow):
+        links = ["http://example.com/valid/1", "http://example.com/valid/2"]
+        workflow.scrape(links)
+        workflow.analyze()
+        dump_df = workflow.dump_store()
+        workflow.clear_store()
+        assert workflow.store == {}
+        workflow.load_store(dump_df, flush=True)
+        for link in links:
+            assert link in workflow.store
+            record = workflow.store[link]
+            assert record.scrape_result is not None or record.analysis_result is not None
+            
+    def test_export(self, workflow):
+        links = ["http://example.com/valid/1", "http://example.com/valid/2"]
+        workflow.scrape(links)
+        workflow.analyze()
+        export_df = workflow.export()
+        assert len(export_df) == 2
+        for col in ["link", "summary"]:
+            assert col in export_df.columns
+            
+    def test_export_verbose(self, workflow):
+        links = ["http://example.com/valid/1", "http://example.com/valid/2"]
+        workflow.scrape(links)
+        workflow.analyze()
+        export_df = workflow.export(verbose=True)
+        expected_cols = {"link", "scrape_success", "scrape_error", "analysis_success", "analysis_error"}
+        assert expected_cols.issubset(set(export_df.columns))

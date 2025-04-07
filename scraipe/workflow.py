@@ -179,12 +179,7 @@ class Workflow:
         results:List[ScrapeResult] = []
         for i, row in data.iterrows():
             try:
-                result = ScrapeResult(
-                    link=row["link"],
-                    scrape_success=row["scrape_success"],
-                    scrape_error=row["scrape_error"],
-                    content=row["content"]
-                )
+                result = ScrapeResult(**row.to_dict())
             except ValidationError as e:
                 print("asdf")
                 self.logger.info(f"Failed to update scrape result {row}. Error: {e}")
@@ -338,36 +333,73 @@ class Workflow:
             rows.append(row)
         return pd.DataFrame(rows)
     
-    def get_records(self) -> pd.DataFrame:
-        """Return a DataFrame copy of all stored records, including both scrape and analysis results."""
+    def update_records(self, records:List[StoreRecord]):
+        """Update records in the store.
+        
+        Args:
+            records (List[StoreRecord]): List of StoreRecord objects to replace the current store.
+        """
+        # Assert input type
+        assert isinstance(records, list)
+        assert all(isinstance(record, self.StoreRecord) for record in records)
+        assert all(record.link is not None for record in records)
+        
+        self.store.update({record.link: record for record in records})
+        self.logger.info(f"Updated {len(records)} records.")
+        
+    def dump_store(self) -> pd.DataFrame:
+        """Dump the store to a DataFrame that can be loaded later."""
+        records = self.store.values()
+        
+        # Dump ScrapeResult and AnalysisResult fields to a DataFrame
         rows = []
-        for record in self.store.values():
+        for record in records:
             row = {"link": record.link}
             if record.scrape_result is not None:
                 row.update(record.scrape_result.model_dump())
             if record.analysis_result is not None:
                 row.update(record.analysis_result.model_dump())
             rows.append(row)
-        return pd.DataFrame(rows)
-    
-    def update_records(self, state_store_df:pd.DataFrame):
-        """Replace the current store with records from the given DataFrame.
         
-        The DataFrame should include columns to reconstruct both scrape and analysis records.
+        # Get columns from Pydantic models fields
+        columns = [col for col in ScrapeResult.model_fields.keys()] + \
+            [col for col in AnalysisResult.model_fields.keys()]
+        
+        df = pd.DataFrame(rows, columns=columns)
+        return df
+    
+    def load_store(self, df:pd.DataFrame, flush:bool=True):
+        """Load the store from a DataFrame.
         
         Args:
-            state_store_df (pd.DataFrame): DataFrame containing complete record data.
+            df (pd.DataFrame): DataFrame containing scrape and analysis results.
+            flush (bool): If True, clear the current store before loading.
         """
-        for i, row in state_store_df.iterrows():
-            # Create a record from the row
-            record = self.StoreRecord(row["link"])
-            if "content" in row:
-                record.scrape_result = ScrapeResult(**row)
-            if "output" in row:
-                record.analysis_result = AnalysisResult(**row)
-            self.store[row["link"]] = record
-        self.logger.info(f"Updated {len(state_store_df)} records.")
-    
+        # Assert input type
+        assert isinstance(df, pd.DataFrame)
+        
+        if flush:
+            self.clear_store()
+            
+        
+        # Create StoreRecord objects from the DataFrame
+        records = []
+        for _, row in df.iterrows():
+            record = self.StoreRecord(link=row["link"])
+            row_dict = row.to_dict()
+            try:
+                record.scrape_result = ScrapeResult(**row_dict)
+            except ValidationError as e:
+                pass
+            
+            try:
+                record.analysis_result = AnalysisResult(**row_dict)
+            except ValidationError as e:
+                pass
+            records.append(record)
+            
+        self.update_records(records)
+        
     def export(self, verbose=False) -> pd.DataFrame:
         """Export stored records as a DataFrame with unnested analysis outputs.
         
