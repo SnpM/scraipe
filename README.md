@@ -5,6 +5,8 @@
 
 Scraping and analysis framework.
 
+Under development.
+
 ## Features
 - **Versatile Scraping**: Leverage custom scrapers that handle Telegram messages, news articles, and links that require multiple ingress rules.
 - **LLM Analysis:** Process text using OpenAI models with built-in Pydantic validation.
