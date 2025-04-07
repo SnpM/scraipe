@@ -3,7 +3,7 @@ from scraipe.classes import IScraper, ScrapeResult
 import asyncio
 from typing import final, Any, Callable, Awaitable, List, Generator, Tuple, AsyncGenerator
 import threading
-from concurrent.futures import Future, ThreadPoolExecutor
+from concurrent.futures import Future
 from queue import Queue
 import time
 import asyncio
@@ -45,8 +45,7 @@ class IAsyncExecutor:
             The result of the coroutine.
         """
         future = self.submit(coro)
-        async_future = asyncio.wrap_future(future)
-        return await async_future
+        return await asyncio.wrap_future(future)
     
     def shutdown(self, wait: bool = True) -> None:
         pass
@@ -204,6 +203,13 @@ class AsyncManager:
             The result of the coroutine.
         """
         return await AsyncManager._executor.async_run(coro)
+    
+    @staticmethod
+    def submit(coro: Awaitable[any]) -> Future:
+        """
+        Begin running the given coroutine using the underlying executor.
+        """
+        return AsyncManager._executor.submit(coro)
 
     @staticmethod
     async def async_run_multiple(tasks: List[Awaitable[Any]], max_workers:int=10) -> AsyncGenerator[Any, None]:
