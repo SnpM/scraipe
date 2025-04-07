@@ -1,5 +1,7 @@
 # Scraipe
 
+[Scraipe Documentation](https://scraipe.readthedocs.io/en/latest/)
+
 Scraipe is a high performance asynchronous scraping and analysis framework that leverages Large Language Models (LLMs) to extract structured information.
 
 ## Features
