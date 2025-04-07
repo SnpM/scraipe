@@ -13,7 +13,6 @@ class Workflow:
     Attributes:
         scraper (IScraper): The scraper instance.
         analyzer (IAnalyzer): The analyzer instance.
-        thread_count (int): Number of threads to use.
         store (Dict[str, Workflow.StoreRecord]): Storage for scrape and analysis results keyed by link.
     """
     
@@ -35,13 +34,11 @@ class Workflow:
     
     scraper:IScraper
     analyzer:IAnalyzer
-    thread_count:int 
     store:Dict[str, StoreRecord]
     def __init__(self, scraper:IScraper, analyzer:IAnalyzer,
         logger:Logger = None):
         self.scraper = scraper
         self.analyzer = analyzer
-        self.thread_count = 1
         self.store = {}
         self.logger = logger if logger else logging.getLogger(__name__)
         
