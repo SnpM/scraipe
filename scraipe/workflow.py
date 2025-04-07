@@ -6,6 +6,7 @@ from tqdm import tqdm
 import logging
 from logging import Logger
 from functools import singledispatchmethod
+import json
 
 @final
 class Workflow:
@@ -366,6 +367,10 @@ class Workflow:
             [col for col in AnalysisResult.model_fields.keys()]
         
         df = pd.DataFrame(rows, columns=columns)
+        
+        # Transform the "output" column to JSON string for serialization
+        df['output'] = df['output'].apply(lambda x: json.dumps(x))
+        
         return df
     
     def load_store(self, df:pd.DataFrame, flush:bool=True):
@@ -381,7 +386,6 @@ class Workflow:
         if flush:
             self.clear_store()
             
-        
         # Create StoreRecord objects from the DataFrame
         records = []
         for _, row in df.iterrows():
@@ -398,6 +402,13 @@ class Workflow:
                 pass
             records.append(record)
             
+        # Transform the "output" column from JSON string to dictionary
+        for record in records:
+            if record.analysis_result is not None and isinstance(record.analysis_result.output, str):
+                try:
+                    record.analysis_result.output = json.loads(record.analysis_result.output)
+                except json.JSONDecodeError as e:
+                    self.logger.info(f"Failed to decode JSON for {record.link}. Error: {e}")
         self.update_records(records)
         
     def export(self, verbose=False) -> pd.DataFrame:
