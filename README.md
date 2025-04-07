@@ -1,4 +1,7 @@
 # Scraipe
+[![pypi](https://img.shields.io/pypi/v/scraipe.svg)](https://pypi.python.org/pypi/scraipe)
+[![versions](https://img.shields.io/pypi/pyversions/scraipe.svg)](https://github.com/snpm/scraipe)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/SnpM/scraipe/blob/main/LICENSE)
 
 [Scraipe Documentation](https://scraipe.readthedocs.io/en/latest/)
 
