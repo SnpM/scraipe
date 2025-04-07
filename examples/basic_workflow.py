@@ -1,4 +1,4 @@
-# Import necessary components from scraipe
+# Import components from scraipe
 from scraipe.defaults import TextScraper
 from scraipe.defaults import TextStatsAnalyzer
 from scraipe import Workflow
