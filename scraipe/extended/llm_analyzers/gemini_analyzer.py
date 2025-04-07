@@ -33,19 +33,20 @@ class GeminiAnalyzer(LlmAnalyzerBase):
         self.client = Client(api_key=api_key)
         self.api_key = api_key
     
-    async def query_llm(self, content: str) -> str:
+    async def query_llm(self, content: str, instruction: str) -> str:
         """Asynchronously queries the Gemini API with the given content using the configured system instruction.
         
         Args:
             content (str): The textual content to analyze.
-            
+            instruction (str): The system instruction to be used by the Gemini API.
+        
         Returns:
             str: The generated response content in JSON format.
         """
         config = GenerateContentConfig(
             response_mime_type="application/json",
             response_schema=self.pydantic_schema,
-            system_instruction=self.instruction,
+            system_instruction=instruction,
         )
         
         response = await self.client.aio.models.generate_content(
