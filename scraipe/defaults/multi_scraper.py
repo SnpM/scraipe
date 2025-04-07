@@ -106,7 +106,7 @@ class MultiScraper(IAsyncScraper):
                 result = scraper.scrape(url)
             if result.scrape_success:
                 # Log the successful scrape
-                debug_chain.append(f"{scraper}[SUCCESS]")
+                debug_chain.append(f"{scraper.__class__}[SUCCESS]")
             else:
                 # If the scraper fails, append the error message to the debug chain
                 debug_chain.append(f"{scraper}[FAIL]: {result.scrape_error}")
