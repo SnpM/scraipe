@@ -63,6 +63,11 @@ class IAsyncScraper(IScraper):
         return AsyncManager.run_multiple(tasks, self.max_workers)
             
 class IAsyncAnalyzer(IAnalyzer):
+    """
+    Base class for asynchronous analyzers. Implements the IAnalyzer interface.
+    This class provides a synchronous wrapper around the asynchronous analysis method.
+    Subclasses must implement the async_analyze() method.
+    """
     max_workers:int = 10
     def __init__(self, max_workers: int = 10):
         """
