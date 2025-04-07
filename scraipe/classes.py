@@ -1,13 +1,13 @@
 from abc import ABC, abstractmethod
 from typing import final, List, Dict, Generator, Tuple
 import tqdm
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 @final
 class ScrapeResult(BaseModel):
     
     # Note: It's recommended to use success() and fail() methods to create instances of ScrapeResult.
-    link:str
+    link: str
     content:str = None
     scrape_success:bool
     scrape_error:str = None
@@ -35,6 +35,15 @@ class ScrapeResult(BaseModel):
     
     def __repr__(self):
         return str(self)
+    
+    @model_validator(mode='after')
+    def _validate(self):
+        # Ensure content is present if scrape_success is True
+        if self.scrape_success and not self.content:
+            raise ValueError("Content must be provided if scrape_success is True.")
+        # Ensure error is present if scrape_success is False
+        if not self.scrape_success and not self.scrape_error:
+            raise ValueError("Error must be provided if scrape_success is False.")
     
     @staticmethod
     def succeed(link: str, content: str) -> 'ScrapeResult':
@@ -99,6 +108,15 @@ class AnalysisResult(BaseModel):
     
     def __repr__(self):
         return str(self)
+    
+    @model_validator(mode='after')
+    def _validate(self):
+        # Ensure output is present if analysis_success is True
+        if self.analysis_success and not self.output:
+            raise ValueError("Output must be provided if analysis_success is True.")
+        # Ensure error is present if analysis_success is False
+        if not self.analysis_success and not self.analysis_error:
+            raise ValueError("Error must be provided if analysis_success is False.")
     
     @staticmethod
     def succeed(output: dict) -> 'AnalysisResult':
