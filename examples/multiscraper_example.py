@@ -24,7 +24,7 @@ result = multi_scraper.scrape(link)
 
 print ("=== News Link ===")
 print("Content:", result.content[0:400])
-print("Debug", result.error) # Ingress debug chain stored in error
+print("Debug Info:", result.error) # Ingress debug chain stored in error
 
 # Scrape a non-news link
 link = "https://www.example.com/"
@@ -32,4 +32,4 @@ result = multi_scraper.scrape(link)
 
 print ("\n=== Non-News Link ===")
 print("Content:",result.content[0:400])
-print("Debug:", result.error) # Ingress debug chain stored in error
+print("Debug Info:", result.error) # Ingress debug chain stored in error
