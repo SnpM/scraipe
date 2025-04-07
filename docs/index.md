@@ -34,7 +34,7 @@
    ```
 2. **Example Usage**
     ```python
-    # Import necessary components from scraipe
+    # Import components from scraipe
     from scraipe.defaults import TextScraper
     from scraipe.defaults import TextStatsAnalyzer
     from scraipe import Workflow
@@ -70,4 +70,5 @@ Check out the following resources to get more familiar with Scraipe:
 
 - [Basic Workflow](./get_started/basic_workflow.md)
 - [Custom Scrapers and Analyzers](./advanced_usage/custom_components.md)
-- [MultiScarper for dynamic link routing](./advanced_usage/multi_scraper_guide.md)
+- [MultiScraper for dynamic link routing](./advanced_usage/multi_scraper_guide.md)
+- [Using LLM Analyzers for intelligent feature extraction](./get_started/using_llm_analyzers.md)

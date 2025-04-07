@@ -1,6 +1,6 @@
 # Async Architecture
 
-Scraipe features a highly portable synchronous API. Unfortunately, many scraping and analysis tasks are IO-bound meaning we have to wait a lot for network responses. To achieve high performance, most scrapers and analyzers need to execute their logic in asynchronously. This page provides a deep dive into how Scraipe seamlessly orchestrates synchronous and asynchronous code. If you just want to create async components, check out the guide on [custom components](./custom_components.md#async-scrapers-and-analyzers).
+Scraipe features a highly portable synchronous API. Sadly, many scraping and analysis tasks are IO-bound meaning we have to wait a lot for network responses. To achieve high performance, most scrapers and analyzers need to execute their logic asynchronously. This page provides a deep dive into how Scraipe seamlessly orchestrates synchronous and asynchronous code. If you just want to create async components, check out the guide on [custom components](./custom_components.md#async-scrapers-and-analyzers).
 
 ## Async Interfaces
 

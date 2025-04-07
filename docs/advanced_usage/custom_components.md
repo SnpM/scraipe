@@ -25,7 +25,7 @@ To facilitate fault tolerance, `scrape()` implementations should not raise excep
 
 ## Custom Analyzers
 
-To create a custom analyzer, extend [`IAnalyzer`][scraipe.classes.IAnalyzer] and implement the `analyze()` method. [ExampleAnalyzer](https://github.com/SnpM/scraipe/blob/main/scraipe/defaults/examples.py) demonstrates a minimal implementation that reverses the content.
+To create a custom analyzer, extend [`IAnalyzer`][scraipe.classes.IAnalyzer] and implement the `analyze()` method. [ExampleAnalyzer](https://github.com/SnpM/scraipe/blob/main/scraipe/defaults/examples.py) is a minimal implementation that reverses the content.
 
 ```python
 from scraipe.classes import IAnalyzer, AnalysisResult
@@ -89,4 +89,6 @@ class AsyncExampleAnalyzer(IAsyncAnalyzer):
 ```
 
 
-[TextScraper][scraipe.defaults.TextScraper] and [LlmAnalyzerBase][scraipe.extended.llm_analyzers.LlmAnalyzerBase] are more complete examples of asynchronous components. Check out [Async Architecture](./async_architecture.md) to learn more about asynchronous orchestration in Scraipe's synchronous API.
+[TextScraper][scraipe.defaults.TextScraper] and [LlmAnalyzerBase][scraipe.extended.llm_analyzers.LlmAnalyzerBase] are more complete examples of asynchronous component implementations.
+
+To learn more about Scraipe's asynchronous orchestration, check out [Async Architecture](./async_architecture.md).

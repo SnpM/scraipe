@@ -1,16 +1,18 @@
 # Bundled Components
 Scraipe features a powerful collection of scrapers and analyzers that we are continuously expanding.
+Plug these into your workflow to suit your diverse project needs.
 
-Components with a caret^ require dependencies in the `scraipe[extended]` subpackage.
+If you need more functionality, write your [custom scrapers and analyzers](../advanced_usage/custom_components.md).
+
 
 ## Scrapers
 
 - **[`TextScraper`][scraipe.defaults.TextScraper]**: Extracts visible text from HTML content using `aiohttp` for fetching and `BeautifulSoup` for parsing.
 - **[`RawScraper`][scraipe.defaults.RawScraper]**: Retrieves raw webpage content as plain text using `aiohttp`.
-- **[`MultiScraper^`][scraipe.defaults.multi_scraper.MultiScraper]**: Uses multiple ingress rules to determine the appropriate scraper for a given URL.
+- **[`MultiScraper^`][scraipe.defaults.multi_scraper.MultiScraper]**: Uses ingress rules to determine the appropriate scraper for a given URL.
 - **[`TelegramMessageScraper^`][scraipe.extended.TelegramMessageScraper]**: Scrapes Telegram messages using the `pyrogram` library.
 - **[`NewsScraper^`][scraipe.extended.NewsScraper]**: Extracts article content from webpages using `aiohttp` and `trafilatura`.
-- **[`TelegramNewsScraper^`][scraipe.extended.TelegramNewsScraper]**: A specialized `MultiScraper` for handling Telegram and news links, with fallback to `TextScraper`.
+- **[`TelegramNewsScraper^`][scraipe.extended.TelegramNewsScraper]**: A specialized `MultiScraper` for handling Telegram and news links, with a fallback to `TextScraper`.
 
 ## Analyzers
 
@@ -18,6 +20,8 @@ Components with a caret^ require dependencies in the `scraipe[extended]` subpack
 - **[`OpenAiAnalyzer^`][scraipe.extended.llm_analyzers.OpenAiAnalyzer]**: Uses OpenAI's API to analyze content based on a provided instruction and optional schema validation.
 - **[`GeminiAnalyzer^`][scraipe.extended.llm_analyzers.GeminiAnalyzer]**: Integrates Google Gemini's API to analyze content based on instruction and mandatory schema validation. 
 
+<sub>Components with a caret^ require `scraipe[extended]` dependencies.</sub>
+
 ---
 
-These scrapers and analyzers can be swapped into your [basic workflow](./basic_workflow.md).
+These scrapers and analyzers can be plugged into your [basic workflow](./basic_workflow.md).
