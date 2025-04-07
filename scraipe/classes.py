@@ -44,6 +44,7 @@ class ScrapeResult(BaseModel):
         # Ensure error is present if scrape_success is False
         if not self.scrape_success and not self.scrape_error:
             raise ValueError("Error must be provided if scrape_success is False.")
+        return self
     
     @staticmethod
     def succeed(link: str, content: str) -> 'ScrapeResult':
@@ -117,6 +118,7 @@ class AnalysisResult(BaseModel):
         # Ensure error is present if analysis_success is False
         if not self.analysis_success and not self.analysis_error:
             raise ValueError("Error must be provided if analysis_success is False.")
+        return self
     
     @staticmethod
     def succeed(output: dict) -> 'AnalysisResult':
