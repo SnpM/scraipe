@@ -6,9 +6,9 @@ Dependencies for this package can be installed using `pip install scraipe[extend
 
 _AVAILABLE = False
 try:
-    import telethon
-    import trafilatura
-    import openai
+    # Validate extemded dependencies from pyproject.toml:
+    for pkg in ["pyrogram", "tgcrypto", "trafilatura"]:
+        __import__(pkg)
     _AVAILABLE = True
 except ImportError:
     raise "Missing dependencies. Install with `pip install scraipe[extended]`."
