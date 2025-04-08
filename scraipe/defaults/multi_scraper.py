@@ -1,7 +1,9 @@
 from scraipe.classes import IScraper, ScrapeResult
 from scraipe.async_classes import IAsyncScraper
+from scraipe.async_util import AsyncManager
+from concurrent.futures import Future
 
-from typing import List, cast, final
+from typing import List, cast, final, Tuple
 import re
 
 @final
@@ -54,7 +56,7 @@ class IngressRule():
             match = r".*"
         return IngressRule(match, scraper)
 
-class MultiScraper(IAsyncScraper):
+class MultiScraper(IScraper):
     """
     A scraper that uses multiple ingress rules to determine how to scrape a link.
 
@@ -98,8 +100,56 @@ class MultiScraper(IAsyncScraper):
         self.debug = debug
         assert isinstance(debug_delimiter, str), "debug_delimiter must be a string"
         self.debug_delimiter = debug_delimiter
+        
+    def _run_scraper(self, link:str, scraper:IScraper) -> ScrapeResult:
+        if isinstance(scraper, IAsyncScraper):
+            async_scraper = cast(IAsyncScraper, scraper)
+            result = async_scraper.async_scrape(link)
+        else:
+            result = scraper.scrape(link)
+        return result
+    
+    
+    def _process_rules(self, rules:List[IngressRule], url:str) -> List[Tuple[IngressRule,ScrapeResult]]:
+        """Returns a ScrapeResult if a run succeeded; else None"""
+        process_results = []
+        for rule in rules:
+            if re.search(rule.match, url):
+                # If the rule matches, use the associated scraper
+                result = self._run_scraper(url, rule.scraper)
+                process_results.append((rule,result))
+                # Stop processing after first success
+                if result.success:
+                    break
+        return process_results
+    
+    def _compile_results(self, url:str, process_results:List[Tuple[IngressRule,ScrapeResult]]) -> ScrapeResult:
+        # Construct debug message from results
+        debug_chain = []
+        for process_result in process_results:
+            result = process_result[1]
+            rule = process_result[0]
+            if result.scrape_success:
+                debug_chain.append(f"{rule.scraper.__class__.__name__}[SUCCESS]")
+            else:
+                debug_chain.append(f"{rule.scraper.__class__.__name__}[FAIL]: {result.scrape_error}")    
+        debug_message =  self.debug_delimiter.join(debug_chain)
+        
+        for process_result in process_results:
+            result = process_result[1]
+            if result.success:
+                # Add debug info to error
+                if self.debug:
+                    result.scrape_error = debug_message
+                # Return the successful ScrapeResult
+                return result
+        # No successful results; return failure
+        error_message = f"No scraper could handle {url}{self.debug_delimiter}{debug_message}"
+        result = ScrapeResult.fail(url, error_message)
+        return result
+        
 
-    async def async_scrape(self, url: str) -> ScrapeResult:
+    def scrape(self, url: str) -> ScrapeResult:
         """
         Scrape the given URL using the appropriate scraper based on ingress rules.
 
@@ -109,39 +159,5 @@ class MultiScraper(IAsyncScraper):
         Returns:
             ScrapeResult: The result of the scrape.
         """
-        debug_chain = []      
-        async def use_scraper(scraper: IScraper) -> ScrapeResult:
-            """Use the provided scraper to scrape the URL and save the error message if it fails."""
-            if isinstance(scraper, IAsyncScraper):
-                async_scraper = cast(IAsyncScraper, scraper)
-                result = await async_scraper.async_scrape(url)
-            else:
-                result = scraper.scrape(url)
-            if result.scrape_success:
-                # Log the successful scrape
-                debug_chain.append(f"{scraper.__class__}[SUCCESS]")
-            else:
-                # If the scraper fails, append the error message to the debug chain
-                debug_chain.append(f"{scraper}[FAIL]: {result.scrape_error}")
-            return result
-                
-        successful_result = None
-        # Attempt to scrape using each ingress rule
-        for rule in self.ingress_rules:
-            if re.search(rule.match, url):
-                # If the rule matches, use the associated scraper
-                result = await use_scraper(rule.scraper)
-                if result.scrape_success:
-                    successful_result = result
-                    break
-        
-        if successful_result:
-            if self.debug:
-                # Even if successful, store the debug chain in result
-                successful_result.scrape_error = self.debug_delimiter.join(debug_chain)
-            return successful_result
-
-        # If ingress rules don't succeed, return a failure result
-        error_message = f"No scraper could handle {url}{self.debug_delimiter}{self.debug_delimiter.join(debug_chain)}"
-        result = ScrapeResult.fail(url, error_message)
-        return result
+        process_results = self._process_rules(rules=self.ingress_rules, url=url)
+        return self._compile_results(url, process_results)

@@ -5,10 +5,10 @@ from asyncio import Future
 from typing import List, Tuple
 import asyncio
 
-class MultiAnalyzer(IAsyncAnalyzer):
+class MultiAnalyzer(IAnalyzer):
     """
     MultiAnalyzer is a class that allows for the parallel execution of multiple analyzers.
-    It is designed to work with the IAsyncAnalyzer interface and can be used to run multiple
+    It can take IAnalyzer and IAsyncAnalyzer instances and can be used to run multiple
     analyzers concurrently.
     """
 
@@ -93,23 +93,12 @@ class MultiAnalyzer(IAsyncAnalyzer):
             
             success_result = AnalysisResult.succeed(output)
             if self.debug:
-                success_result.debug = self.debug_delimiter.join(debug_chain)
+                success_result.analysis_error = self.debug_delimiter.join(debug_chain)
             return success_result
         else:
             # If all analyzers failed, return a fail result
             debug_message = "All analyzers failed... " + self.debug_delimiter.join(debug_chain)
             return AnalysisResult.fail(debug_message)
-        
-    async def async_analyze(self, content):
-        future = self._submit_async_analyzers(content)
-        # Run sync analyzers in serial
-        sync_results_with_ids = self._run_sync_analyzers(content)
-        # Wait for async results
-        async_results_with_ids = await asyncio.wrap_future(future)
-        # Combine sync and async results
-        results_with_ids = sync_results_with_ids + async_results_with_ids
-        # Process results with ids
-        return self._process_results_with_ids(results_with_ids)     
 
     def analyze(self, content):
         future = self._submit_async_analyzers(content)

@@ -248,7 +248,7 @@ class AsyncManager:
             result_queue.put(DONE)
         
         AsyncManager._executor.submit(producer())
-
+        
         POLL_INTERVAL = 0.01  # seconds
         done = False
         while not done:
