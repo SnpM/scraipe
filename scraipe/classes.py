@@ -62,7 +62,7 @@ class ScrapeResult(BaseModel):
         return ScrapeResult(
             link=link,
             content=content,
-            scrape_success=True
+            scrape_success=True,
             metadata = metadata
         )
     
