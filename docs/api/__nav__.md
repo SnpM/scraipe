@@ -2,6 +2,7 @@
 * [async_util](async_util.md)
 * [classes](classes.md)
 * defaults
+    * [multi_analyzer](defaults/multi_analyzer.md)
     * [multi_scraper](defaults/multi_scraper.md)
     * [raw_scraper](defaults/raw_scraper.md)
     * [text_scraper](defaults/text_scraper.md)
