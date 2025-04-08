@@ -76,3 +76,11 @@ async def test_async_run_parallel():
     duration = t.stop()
     assert result == ["done"] * n
     assert duration < 1.1, f"Expected duration < 1.1 seconds, got {duration:.2f} seconds"
+
+@pytest.mark.asyncio
+async def test_run_from_event_loop():
+    executor = DefaultBackgroundExecutor()
+    loop = asyncio.get_event_loop()
+    result = executor.run(successful_async_function(5, 7))
+    
+    assert result == 12

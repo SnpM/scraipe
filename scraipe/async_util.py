@@ -3,10 +3,11 @@ from scraipe.classes import IScraper, ScrapeResult
 import asyncio
 from typing import final, Any, Callable, Awaitable, List, Generator, Tuple, AsyncGenerator
 import threading
-from concurrent.futures import Future
+from concurrent.futures import Future, TimeoutError
 from queue import Queue
 import time
 import asyncio
+
 # Base interface for asynchronous executors.
 class IAsyncExecutor:
     @abstractmethod
@@ -32,7 +33,14 @@ class IAsyncExecutor:
         Returns:
             The result of the coroutine.
         """
-        return self.submit(coro).result()
+        POLL_INTERVAL = .01
+        future = self.submit(coro)
+        while True:
+            try:
+                return future.result(timeout=POLL_INTERVAL)
+            except TimeoutError:
+                time.sleep(POLL_INTERVAL)
+        
     
     async def async_run(self, coro: Awaitable[Any]) -> Any:
         """
