@@ -60,6 +60,8 @@ class ScrapeResult(BaseModel):
         Returns:
             ScrapeResult: An instance with scrape_success set to True.
         """
+        assert link is not None, "Link must be provided"
+        assert content is not None, "Content must be provided for success"
         return ScrapeResult(
             link=link,
             content=content,
@@ -78,6 +80,8 @@ class ScrapeResult(BaseModel):
         Returns:
             ScrapeResult: An instance with scrape_success set to False.
         """
+        assert isinstance(link,str), "Link must be provided"
+        assert isinstance(error,str), "Error must be populated for failure"
         return ScrapeResult(
             link=link,
             scrape_success=False,
