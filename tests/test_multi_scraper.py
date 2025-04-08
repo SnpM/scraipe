@@ -3,6 +3,7 @@ import pytest
 from scraipe.defaults.multi_scraper import MultiScraper, IngressRule
 from scraipe.classes import ScrapeResult
 from scraipe import IScraper
+from scraipe.async_classes import IAsyncScraper  # added import
 
 # Dummy scraper that always returns success.
 class DummySuccessScraper(IScraper):
@@ -58,3 +59,20 @@ def test_multiple_rules_second_matches():
     result = ms.scrape(url)
     assert result.scrape_success is True
     assert "SUCCESS" in result.scrape_error
+
+def test_async_and_sync_scrapers():
+    class AsyncDummySuccessScraper(IAsyncScraper):
+        async def async_scrape(self, url: str) -> ScrapeResult:
+            return ScrapeResult.succeed(url, "Async Dummy succeeded")
+        def get_expected_link_format(self):
+            return r"async"
+    # Use existing sync dummy scraper for failure
+    scraper_sync_fail = DummyFailScraper()
+    rule_sync_fail = IngressRule(scraper_sync_fail.get_expected_link_format(), scraper_sync_fail)
+    scraper_async = AsyncDummySuccessScraper()
+    rule_async = IngressRule(scraper_async.get_expected_link_format(), scraper_async)
+    ms = MultiScraper([rule_sync_fail, rule_async], debug=True)
+    url = "http://example.com/async"
+    result = ms.scrape(url)
+    assert result.scrape_success is True
+    assert "[SUCCESS]" in result.scrape_error

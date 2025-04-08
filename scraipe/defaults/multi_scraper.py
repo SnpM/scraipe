@@ -104,7 +104,7 @@ class MultiScraper(IScraper):
     def _run_scraper(self, link:str, scraper:IScraper) -> ScrapeResult:
         if isinstance(scraper, IAsyncScraper):
             async_scraper = cast(IAsyncScraper, scraper)
-            result = async_scraper.async_scrape(link)
+            result = AsyncManager.run(async_scraper.async_scrape(link))
         else:
             result = scraper.scrape(link)
         return result
