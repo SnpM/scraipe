@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import final, List, Dict, Generator, Tuple
 import tqdm
 from pydantic import BaseModel, model_validator
+from re import Pattern
 
 @final
 class ScrapeResult(BaseModel):
@@ -171,6 +172,14 @@ class IScraper(ABC):
         for link in links:
             result = self.scrape(link)
             yield link, result
+    
+    def get_expected_link_format(self) -> str|Pattern:
+        """Returns the expected link format for the scraper. Returning None indicates compatibility with any link format.
+        
+        Returns:
+            str: The expected link format.
+        """
+        return None
 
 class IAnalyzer(ABC):
     @abstractmethod

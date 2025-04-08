@@ -28,6 +28,8 @@ class IngressRule():
             self.match = re.compile(match)
         elif isinstance(match, re.Pattern):
             self.match = match
+        else:
+            raise ValueError("match must be a string or a compiled regex pattern")
         assert isinstance(self.match, re.Pattern), "self.match must be a regex pattern"
         
         assert isinstance(scraper, IScraper), "scraper must be an instance of IScraper"
@@ -36,6 +38,21 @@ class IngressRule():
         return f"IngressRule(match={self.match}, scraper={self.scraper})"
     def __repr__(self):
         return self.__str__()
+    @staticmethod
+    def from_scraper(scraper:IScraper) -> 'IngressRule':
+        """
+        Create an IngressRule from a scraper instance and its expected link format.
+
+        Args:
+            scraper (IScraper): The scraper to use for this rule.
+
+        Returns:
+            IngressRule: An IngressRule instance with a match that always returns True.
+        """
+        match = scraper.get_expected_link_format()
+        if match is None:
+            match = r".*"
+        return IngressRule(match, scraper)
 
 class MultiScraper(IAsyncScraper):
     """

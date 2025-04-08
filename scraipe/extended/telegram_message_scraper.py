@@ -16,6 +16,7 @@ class TelegramMessageScraper(IAsyncScraper):
         api_hash (str): The API hash for the Telegram client.
         phone_number (str): The phone number associated with the Telegram account.
     """
+        
     DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
 
     def __init__(self, name: str, api_id: str, api_hash: str, phone_number: str):
