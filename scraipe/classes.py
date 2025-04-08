@@ -11,6 +11,7 @@ class ScrapeResult(BaseModel):
     content:str|None = None
     scrape_success:bool
     scrape_error:str|None = None
+    metadata:dict|None = None
     
     @property
     def success(self) -> bool:
@@ -47,12 +48,13 @@ class ScrapeResult(BaseModel):
         return self
     
     @staticmethod
-    def succeed(link: str, content: str) -> 'ScrapeResult':
+    def succeed(link: str, content: str, metadata:dict = None) -> 'ScrapeResult':
         """Creates a ScrapeResult instance for a successful scraping operation.
         
         Args:
             link (str): The URL that was scraped.
-            content (str): The content fetched from the URL.
+            content (str): The content fetched from the link.
+            metadata (dict): Additional data scraped from the link.
         
         Returns:
             ScrapeResult: An instance with scrape_success set to True.
@@ -61,6 +63,7 @@ class ScrapeResult(BaseModel):
             link=link,
             content=content,
             scrape_success=True
+            metadata = metadata
         )
     
     @staticmethod
@@ -77,7 +80,7 @@ class ScrapeResult(BaseModel):
         return ScrapeResult(
             link=link,
             scrape_success=False,
-            scrape_error=error
+            scrape_error=error,
         )
 
 @final
