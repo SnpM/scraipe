@@ -174,10 +174,10 @@ class IScraper(ABC):
             yield link, result
     
     def get_expected_link_format(self) -> str|Pattern:
-        """Returns the expected link format for the scraper. Returning None indicates compatibility with any link format.
+        """Returns the expected regex format for links compatible with the scraper. Returning None indicates compatibility with any link format.
         
         Returns:
-            str: The expected link format.
+            str: The expected link format as a regex string or compiled pattern.
         """
         return None
 

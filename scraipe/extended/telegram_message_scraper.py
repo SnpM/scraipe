@@ -33,6 +33,10 @@ class TelegramMessageScraper(IAsyncScraper):
         self.api_id = api_id
         self.api_hash = api_hash
         self.phone_number = phone_number
+        
+    def get_expected_link_format(self):
+        # regex for telegram message links
+        return "https://t.me/([^/]+)/(\d+)"
 
     async def _get_telegram_content(self, chat_name: str, message_id: int):
         """
