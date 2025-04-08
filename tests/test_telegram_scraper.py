@@ -30,6 +30,8 @@ def mock_scraper():
         mock_client.__aenter__ = AsyncMock(return_value=mock_client)  # added for async context manager
         mock_client.__aexit__ = AsyncMock(return_value=None)            # added for async context manager
         mock_client.start = AsyncMock()
+        mock_client.connect = AsyncMock(return_value=True)             # NEW: add async connect
+        mock_client.disconnect = AsyncMock(return_value=None)          # NEW: add async disconnect
         mock_client.get_chat = AsyncMock()
         mock_client.get_messages = AsyncMock()
         scraper = TelegramMessageScraper("mock_name", "mock_api_id", "mock_api_hash", "mock_phone_number")

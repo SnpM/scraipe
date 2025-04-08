@@ -5,6 +5,7 @@ from pyrogram import Client
 import re
 from scraipe.async_classes import IAsyncScraper
 from scraipe.async_util import AsyncManager
+import warnings
 
 class TelegramMessageScraper(IAsyncScraper):
     """
@@ -34,9 +35,30 @@ class TelegramMessageScraper(IAsyncScraper):
         self.api_hash = api_hash
         self.phone_number = phone_number
         
+        print(f"Initializing the Telegram session...")
+        self.authenticate()
+    
+    def authenticate(self) -> bool:
+        """
+        Authenticate the Telegram session and return whether the authentication was successful.
+        """
+        async def _authenticate():
+            try:
+                client = Client(self.name, api_id=self.api_id, api_hash=self.api_hash, phone_number=self.phone_number)
+                if not await client.connect():
+                    warnings.warn("Interactive login is required")
+                    await client.start()
+                await client.stop()
+            except:
+                return False
+            else:
+                return True
+        
+        return AsyncManager.run(_authenticate())
+        
     def get_expected_link_format(self):
         # regex for telegram message links
-        return "https://t.me/([^/]+)/(\d+)"
+        return "https://t.me/[^/]+/[0-9]+"
 
     async def _get_telegram_content(self, chat_name: str, message_id: int):
         """
@@ -52,22 +74,29 @@ class TelegramMessageScraper(IAsyncScraper):
         Raises:
             Exception: If failing to retrieve the chat or message, or if the chat is restricted.
         """
-        async with Client(self.name, api_id=self.api_id, api_hash=self.api_hash, phone_number=self.phone_number) as client:
-            try:
-                entity = await client.get_chat(chat_name)
-            except Exception as e:
-                raise Exception(f"Failed to get chat for {chat_name}: {e}")
-            if hasattr(entity, 'restricted') and entity.restricted:
-                raise Exception(f"Chat {chat_name} is restricted.")
-            try:
-                message = await client.get_messages(entity.id, message_id)
-            except Exception as e:
-                raise Exception(f"Failed to get message {message_id} from {chat_name}: {e}")
-            content = None
-            if message:
-                content = message.text or message.caption
-            assert content is not None, f"Message {message_id} from {chat_name} is None."
-            return content
+        client = Client(self.name, api_id=self.api_id, api_hash=self.api_hash, phone_number=self.phone_number)
+        authenticated = await client.connect()
+        if not authenticated:
+            raise Exception("Telagram session not auth'd. Please authenticate by calling authenticate().")
+    
+        try:
+            entity = await client.get_chat(chat_name)
+        except Exception as e:
+            raise Exception(f"Failed to get chat for {chat_name}: {e}")
+        if hasattr(entity, 'restricted') and entity.restricted:
+            raise Exception(f"Chat {chat_name} is restricted.")
+        try:
+            message = await client.get_messages(entity.id, message_id)
+        except Exception as e:
+            raise Exception(f"Failed to get message {message_id} from {chat_name}: {e}")
+        
+        content = None
+        if message:
+            content = message.text or message.caption
+        assert content is not None, f"Message {message_id} from {chat_name} is None."
+        
+        await client.disconnect()
+        return content
 
     async def async_scrape(self, url: str) -> ScrapeResult:
         """

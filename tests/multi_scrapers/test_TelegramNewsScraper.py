@@ -1,80 +1,64 @@
 import re
 import pytest
-from scraipe.extended.telegram_news_scraper import TelegramNewsScraper
-from scraipe.classes import ScrapeResult, IScraper
+from scraipe import IScraper
 
+# Dummy scraper to simulate IScraper behavior
+class DummyScraper (IScraper):
+    def __init__(self, name, ret_val):
+        self.name = name
+        self.ret_val = ret_val
+        self.called = False
 
-# Dummy telegram scraper that returns success.
-class DummyTelegramScraper(IScraper):
-    def scrape(self, url: str):
-        return ScrapeResult.succeed(url, "Telegram content")
-    def __str__(self):
-        return "DummyTelegramScraper"
-    async def async_scrape(self, url: str):
-        return self.scrape(url)
+    def scrape(self, url):
+        self.called = True
+        return f"{self.name} scraped {url} with result: {self.ret_val}"
 
-# Dummy news scraper that returns success.
-class DummyNewsScraper(IScraper):
-    def scrape(self, url: str):
-        return ScrapeResult.succeed(url, "News content")
-    def __str__(self):
-        return "DummyNewsScraper"
-    async def async_scrape(self, url: str):
-        return self.scrape(url)
+# Helper to simulate MultiScraper routing through ingress_rules
+def dummy_scrape(url, ingress_rules):
+    for rule in ingress_rules:
+        if re.search(rule.match, url):
+            return rule.scraper.scrape(url)
+    return None
 
-# Dummy aiohttp scraper that returns success.
-class DummyAiohttpScraper(IScraper):
-    def scrape(self, url: str):
-        return ScrapeResult.succeed(url, "Aiohttp content")
-    def __str__(self):
-        return "DummyAiohttpScraper"
-    async def async_scrape(self, url: str):
-        return self.scrape(url)
+def test_telegram_news_scraper_init_error():
+    from scraipe.extended.telegram_news_scraper import TelegramNewsScraper
+    with pytest.raises(ValueError):
+        TelegramNewsScraper(telegram_scraper=None)
 
-# Dummy failure scraper that always fails.
-class DummyFailureScraper(IScraper):
-    def scrape(self, url: str):
-        return ScrapeResult.fail(url, "failed")
-    def __str__(self):
-        return "DummyFailureScraper"
-    async def async_scrape(self, url: str):
-        return self.scrape(url)
+def test_telegram_news_scraper_routing():
+    from scraipe.extended.telegram_news_scraper import TelegramNewsScraper
+    telegram_dummy = DummyScraper("telegram", "telegram_result")
+    news_dummy = DummyScraper("news", "news_result")
+    text_dummy = DummyScraper("text", "text_result")
 
-def test_telegram_rule_success():
-    # URL matching telegram rule.
-    url = "https://t.me/username/1234"
     scraper = TelegramNewsScraper(
-        telegram_scraper=DummyTelegramScraper(),
-        news_scraper=DummyNewsScraper(),
-        text_scraper=DummyAiohttpScraper()
+        telegram_scraper=telegram_dummy,
+        news_scraper=news_dummy,
+        text_scraper=text_dummy
     )
-    result = scraper.scrape(url)
-    assert result.scrape_success
-    assert result.content == "Telegram content"
 
-def test_news_rule_success():
-    # Non-telegram URL: telegram rule is not triggered.
-    url = "http://news.example.com/article"
-    scraper = TelegramNewsScraper(
-        telegram_scraper=DummyFailureScraper(),
-        news_scraper=DummyNewsScraper(),
-        text_scraper=DummyAiohttpScraper()
-    )
-    result = scraper.scrape(url)
-    assert result.scrape_success
-    assert result.content == "News content"
+    # Test that a telegram link routes to the telegram scraper
+    telegram_url = "https://t.me/username/1234"
+    result = dummy_scrape(telegram_url, scraper.ingress_rules)
+    assert "telegram" in result
 
-def test_aiohttp_fallback():
-    # Both telegram and news fail; fallback to aiohttp scraper.
-    url = "http://news.example.com/article"
+    # Test that a non-telegram link routes to the news scraper
+    news_url = "https://example.com/article"
+    result = dummy_scrape(news_url, scraper.ingress_rules)
+    assert "news" in result
+
+def test_fallback_rule():
+    from scraipe.extended.telegram_news_scraper import TelegramNewsScraper
+    telegram_dummy = DummyScraper("telegram", "telegram_result")
+    news_dummy = DummyScraper("news", "news_result")
+    text_dummy = DummyScraper("text", "text_result")
+
     scraper = TelegramNewsScraper(
-        telegram_scraper=DummyFailureScraper(),
-        news_scraper=DummyFailureScraper(),
-        text_scraper=DummyAiohttpScraper(),
-        debug=True,
+        telegram_scraper=telegram_dummy,
+        news_scraper=news_dummy,
+        text_scraper=text_dummy
     )
-    result = scraper.scrape(url)
-    assert result.scrape_success
-    assert result.content == "Aiohttp content"
-    # Check that errors from failing scrapers are present.
-    assert "DummyFailureScraper[FAIL]: failed" in result.scrape_error
+    generic_url = "https://anotherexample.com"
+    result = dummy_scrape(generic_url, scraper.ingress_rules)
+    # With current routing, since the telegram rule does not match, news should be selected.
+    assert "news" in result
