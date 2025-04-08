@@ -16,7 +16,7 @@ class DummyScraper (IScraper):
 # Helper to simulate MultiScraper routing through ingress_rules
 def dummy_scrape(url, ingress_rules):
     for rule in ingress_rules:
-        if re.search(rule.match, url):
+        if re.search(rule.pattern, url):
             return rule.scraper.scrape(url)
     return None
 

@@ -15,10 +15,10 @@ class IngressRule():
         match (re.Pattern): A compiled regular expression used to match URLs.
         scraper (IScraper): An instance of a scraper to be used when the URL matches.
     """
-    match: re.Pattern
+    pattern: re.Pattern
     scraper: IScraper
     def __init__(self,
-                 match: str | re.Pattern,
+                 pattern: str | re.Pattern,
                  scraper: IScraper):
         """
         Initialize the IngressRule with a match string and a scraper.
@@ -26,18 +26,21 @@ class IngressRule():
             match (str|re.Pattern): The regex pattern to match against URLs.
             scraper (IScraper): The scraper to use for this match.
         """
-        if isinstance(match, str):
-            self.match = re.compile(match)
-        elif isinstance(match, re.Pattern):
-            self.match = match
+        if isinstance(pattern, str):
+            try:
+                self.pattern = re.compile(pattern)
+            except re.error as e:
+                raise ValueError(f"Invalid regex pattern: {pattern}") from e
+        elif isinstance(pattern, re.Pattern):
+            self.pattern = pattern
         else:
             raise ValueError("match must be a string or a compiled regex pattern")
-        assert isinstance(self.match, re.Pattern), "self.match must be a regex pattern"
+        assert isinstance(self.pattern, re.Pattern), "self.match must be a regex pattern"
         
         assert isinstance(scraper, IScraper), "scraper must be an instance of IScraper"
         self.scraper = scraper
     def __str__(self):
-        return f"IngressRule(match={self.match}, scraper={self.scraper})"
+        return f"IngressRule(match={self.pattern}, scraper={self.scraper})"
     def __repr__(self):
         return self.__str__()
     @staticmethod
@@ -114,7 +117,7 @@ class MultiScraper(IScraper):
         """Returns a ScrapeResult if a run succeeded; else None"""
         process_results = []
         for rule in rules:
-            if re.search(rule.match, url):
+            if re.search(rule.pattern, url):
                 # If the rule matches, use the associated scraper
                 result = self._run_scraper(url, rule.scraper)
                 process_results.append((rule,result))
