@@ -81,6 +81,16 @@ async def test_async_run_parallel():
 async def test_run_from_event_loop():
     executor = DefaultBackgroundExecutor()
     loop = asyncio.get_event_loop()
-    result = executor.run(successful_async_function(5, 7))
     
-    assert result == 12
+    async def func1():
+        await asyncio.sleep(0.1)
+        print("func1 done")
+        return "func1 " + await func2()
+    async def func2():
+        await asyncio.sleep(0.1)
+        print("func2 done")
+        return "func2"
+    
+    result = executor.run(func1())
+    assert "func1" in result
+    assert "func2" in result

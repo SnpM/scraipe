@@ -33,14 +33,8 @@ class IAsyncExecutor:
         Returns:
             The result of the coroutine.
         """
-        POLL_INTERVAL = .01
         future = self.submit(coro)
-        while True:
-            try:
-                return future.result(timeout=POLL_INTERVAL)
-            except TimeoutError:
-                time.sleep(POLL_INTERVAL)
-        
+        return future.result()        
     
     async def async_run(self, coro: Awaitable[Any]) -> Any:
         """
@@ -57,6 +51,17 @@ class IAsyncExecutor:
     
     def shutdown(self, wait: bool = True) -> None:
         pass
+
+def get_running_thread() -> threading.Thread|None:
+    """
+    Returns the current running thread.
+    """
+    return threading.current_thread()
+def get_running_loop() -> asyncio.AbstractEventLoop|None:
+    """
+    Returns the current running event loop or None if there is no running loop.
+    """
+    return asyncio._get_running_loop()
 
 @final
 class DefaultBackgroundExecutor(IAsyncExecutor):
@@ -80,7 +85,10 @@ class DefaultBackgroundExecutor(IAsyncExecutor):
         Returns:
             A Future object representing the execution of the coroutine.
         """
-        return asyncio.run_coroutine_threadsafe(coro, self._loop)
+        if get_running_loop() is not self._loop:
+            return asyncio.run_coroutine_threadsafe(coro, self._loop)
+        
+        return asyncio.ensure_future(coro, loop=self._loop)
     
     def shutdown(self, wait: bool = True) -> None:
         """
@@ -158,7 +166,13 @@ class EventLoopPoolExecutor(IAsyncExecutor):
             A Future object representing the execution of the coroutine.
         """
         loop, index = self.get_event_loop()
-        future = asyncio.run_coroutine_threadsafe(coro, loop)
+        future = None
+        if get_running_loop() is loop:
+            # If the current thread is the same as the event loop's thread, run it directly.
+            future = asyncio.ensure_future(coro, loop=loop)
+        else:
+            # Otherwise, run it in the event loop's thread.
+            future = asyncio.run_coroutine_threadsafe(coro, loop)
         future.add_done_callback(lambda f: self._decrement_pending(index))
         return future
                 
