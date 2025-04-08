@@ -83,14 +83,17 @@ class MultiScraper(IAsyncScraper):
         Initialize the MultiScraper with ingress rules.
 
         Args:
-            ingress_rules (list[IngressRule]): A list of IngressRule instances.
+            ingress_rules (list[IngressRule]): A list of IngressRule instances. None items are omited.
             debug (bool, optional): Enable debug mode. Defaults to False.
             debug_delimiter (str, optional): Delimiter for joining debug log messages. Defaults to "; ".
         """
         super().__init__()
         assert isinstance(ingress_rules, list), "ingress_rules must be a list of IngressRule"
-        assert all(isinstance(rule, IngressRule) for rule in ingress_rules), "All items in ingress_rules must be IngressRule instances"
-        self.ingress_rules = ingress_rules
+        assert all(rule is None or isinstance(rule, IngressRule) for rule in ingress_rules), "All items in ingress_rules must be IngressRule instances"
+        
+        # Omit None items from ingress_rules
+        self.ingress_rules = [rule for rule in ingress_rules if rule is not None]
+        
         assert isinstance(debug, bool), "debug must be a boolean"
         self.debug = debug
         assert isinstance(debug_delimiter, str), "debug_delimiter must be a string"
