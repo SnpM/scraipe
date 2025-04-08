@@ -155,22 +155,22 @@ class AnalysisResult(BaseModel):
 
 class IScraper(ABC):
     @abstractmethod
-    def scrape(self, url: str) -> ScrapeResult:
+    def scrape(self, link: str) -> ScrapeResult:
         """Fetches content from the specified URL.
         
         Args:
-            url (str): The URL to scrape.
+            link (str): The URL to scrape.
         
         Returns:
             ScrapeResult: The result of the scraping operation.
         """
         raise NotImplementedError()
 
-    def scrape_multiple(self, urls: List[str]) -> Generator[Tuple[str, ScrapeResult], None, None]:
+    def scrape_multiple(self, links: List[str]) -> Generator[Tuple[str, ScrapeResult], None, None]:
         """Get content from multiple urls."""
-        for url in urls:
-            result = self.scrape(url)
-            yield url, result
+        for link in links:
+            result = self.scrape(link)
+            yield link, result
 
 class IAnalyzer(ABC):
     @abstractmethod

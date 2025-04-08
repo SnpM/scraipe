@@ -20,31 +20,31 @@ class IAsyncScraper(IScraper):
         self.max_workers = max_workers
     
     @abstractmethod
-    async def async_scrape(self, url: str) -> ScrapeResult:
+    async def async_scrape(self, link: str) -> ScrapeResult:
         """
         Asynchronously scrape the given URL.
         
         Args:
-            url (str): The URL to scrape.
+            link (str): The URL to scrape.
         
         Returns:
             ScrapeResult: The result of the scrape.
         """
         raise NotImplementedError("Subclasses must implement this method.")
     
-    def scrape(self, url: str) -> ScrapeResult:
+    def scrape(self, link: str) -> ScrapeResult:
         """
         Synchronously scrape the given URL. Wraps async_scrape().
         
         Args:
-            url (str): The URL to scrape.
+            link (str): The link to scrape.
         
         Returns:
             ScrapeResult: The result of the scrape.
         """
-        return AsyncManager.run(self.async_scrape(url))
+        return AsyncManager.run(self.async_scrape(link))
     
-    def scrape_multiple(self, urls) -> Generator[Tuple[str, ScrapeResult], None, None]:
+    def scrape_multiple(self, links) -> Generator[Tuple[str, ScrapeResult], None, None]:
         """
         Asynchronously scrape multiple URLs and yield results in synchronous context.
         Blocks while waiting for results.
@@ -55,11 +55,11 @@ class IAsyncScraper(IScraper):
         Returns:
             Generator[Tuple[str, ScrapeResult], None, None]: A generator yielding tuples of URL and ScrapeResult.
         """
-        def make_task(url):
+        def make_task(link):
             async def task():
-                return url, await self.async_scrape(url)
+                return link, await self.async_scrape(link)
             return task()
-        tasks = [make_task(url) for url in urls]
+        tasks = [make_task(link) for link in links]
         return AsyncManager.run_multiple(tasks, self.max_workers)
             
 class IAsyncAnalyzer(IAnalyzer):
