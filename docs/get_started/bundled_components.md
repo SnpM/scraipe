@@ -10,7 +10,7 @@ If you need more functionality, write your [custom scrapers and analyzers](../ad
 - **[`TextScraper`][scraipe.defaults.TextScraper]**: Extracts visible text from HTML content using `aiohttp` for fetching and `BeautifulSoup` for parsing.
 - **[`RawScraper`][scraipe.defaults.RawScraper]**: Retrieves raw webpage content as plain text using `aiohttp`.
 - **[`MultiScraper^`][scraipe.defaults.multi_scraper.MultiScraper]**: Uses ingress rules to determine the appropriate scraper for a given URL.
-- **[`TelegramMessageScraper^`][scraipe.extended.TelegramMessageScraper]**: Scrapes Telegram messages using the `pyrogram` library.
+- **[`TelegramMessageScraper^`][scraipe.extended.TelegramMessageScraper]**: Scrapes Telegram messages using the `telethon` library.
 - **[`NewsScraper^`][scraipe.extended.NewsScraper]**: Extracts article content from webpages using `aiohttp` and `trafilatura`.
 - **[`TelegramNewsScraper^`][scraipe.extended.TelegramNewsScraper]**: A specialized `MultiScraper` for handling Telegram and news links, with a fallback to `TextScraper`.
 
