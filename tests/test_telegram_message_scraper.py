@@ -13,19 +13,19 @@ TEST_URL = "https://t.me/TelegramTips/515"
 def live_scraper():
     # Load telethon credentials from the environment
     import os
-    name = os.environ.get("TELEGRAM_NAME")
+    session_name = os.environ.get("TELEGRAM_NAME")
     api_id = os.environ.get("TELEGRAM_API_ID")
     api_hash = os.environ.get("TELEGRAM_API_HASH")
     phone_number = os.environ.get("TELEGRAM_PHONE_NUMBER")
-    if not all([name, api_id, api_hash, phone_number]):
+    if not all([session_name, api_id, api_hash, phone_number]):
         pytest.skip("Live scraper credentials are not set in the environment.")
-    scraper =  TelegramMessageScraper(name, api_id, api_hash, phone_number)
+    scraper = TelegramMessageScraper(api_id, api_hash, phone_number, session_name=session_name)
     yield scraper
     scraper.disconnect()
 
 @pytest.fixture
 def mock_scraper():
-    with patch(TARGET_MODULE + ".Client") as MockClient:
+    with patch(TARGET_MODULE + ".TelegramClient") as MockClient:  # modified patch target
         mock_client = MagicMock()
         MockClient.return_value = mock_client
         mock_client.__aenter__ = AsyncMock(return_value=mock_client)  # added for async context manager
@@ -33,12 +33,17 @@ def mock_scraper():
         mock_client.start = AsyncMock()
         mock_client.connect = AsyncMock(return_value=True)             # NEW: add async connect
         mock_client.disconnect = AsyncMock(return_value=None)          # NEW: add async disconnect
-        mock_client.get_chat = AsyncMock()
+        mock_client.get_entity = AsyncMock()
         mock_client.get_messages = AsyncMock()
-        scraper = TelegramMessageScraper("mock_name", "mock_api_id", "mock_api_hash", "mock_phone_number")
-        scraper.client = mock_client
-        yield scraper
-        scraper.disconnect()
+        mock_client.is_user_authorized = AsyncMock(return_value=True)  # Mocking is_user_authorized to always return True
+        
+        # Patch TelegramMessageScraper.authenticate to do nothing
+        with patch(TARGET_MODULE + ".TelegramMessageScraper.authenticate", return_value=True):
+            scraper = TelegramMessageScraper("mock_name", "mock_api_id", "mock_api_hash", "mock_phone_number")
+            scraper.session_string = ""
+            scraper.client = mock_client
+            yield scraper
+            scraper.disconnect()
 
 def test_live_scrape_valid_url(live_scraper):
     if live_scraper is None:
@@ -69,8 +74,8 @@ def test_live_scrape_nonexistent_message(live_scraper):
     assert result.content is None
 
 def test_mock_scrape_valid_url(mock_scraper):
-    mock_scraper.client.get_chat.return_value = MagicMock(restricted=False)
-    mock_scraper.client.get_messages.return_value.text = "Mocked message content"
+    mock_scraper.client.get_entity.return_value = MagicMock(restricted=False)
+    mock_scraper.client.get_messages.return_value.message = "Mocked message content"
     url = "https://t.me/mock_channel/123"
     result = mock_scraper.scrape(url)
     assert isinstance(result, ScrapeResult)
@@ -79,7 +84,7 @@ def test_mock_scrape_valid_url(mock_scraper):
     assert result.content == "Mocked message content"
 
 def test_mock_scrape_restricted_entity(mock_scraper):
-    mock_scraper.client.get_chat.return_value = MagicMock(restricted=True)
+    mock_scraper.client.get_entity.return_value = MagicMock(restricted=True)
     url = "https://t.me/mock_channel/123"
     result = mock_scraper.scrape(url)
     assert isinstance(result, ScrapeResult)
@@ -87,7 +92,7 @@ def test_mock_scrape_restricted_entity(mock_scraper):
     assert "restricted" in result.scrape_error
 
 def test_mock_scrape_nonexistent_message(mock_scraper):
-    mock_scraper.client.get_chat.return_value = MagicMock(restricted=False)
+    mock_scraper.client.get_entity.return_value = MagicMock(restricted=False)
     mock_scraper.client.get_messages.side_effect = Exception("Message not found")
     url = "https://t.me/mock_channel/10000000"
     result = mock_scraper.scrape(url)
@@ -96,46 +101,20 @@ def test_mock_scrape_nonexistent_message(mock_scraper):
     assert result.content is None
     
 
-@pytest.mark.asyncio
-@pytest.mark.skipif(os.environ.get("PYROGRAM") is None, reason="Opt in to run this test.")
-async def test_pyrogram_client(request):
-    """A niche test to ensure pyrogram client works as expected in Scraipe's sync/async contexts."""
+# @pytest.mark.asyncio
+# async def test_telethon_client():
+#     from telethon import TelegramClient
+#     from telethon.sessions import StringSession
+#     name = os.environ.get("TELEGRAM_NAME")
+#     api_id = os.environ.get("TELEGRAM_API_ID")
+#     api_hash = os.environ.get("TELEGRAM_API_HASH")
+#     phone_number = os.environ.get("TELEGRAM_PHONE_NUMBER")
+#     if not all([name, api_id, api_hash, phone_number]):
+#         pytest.skip("Live scraper credentials are not set in the environment.")
     
-    from scraipe.async_util import AsyncManager
-    from pyrogram import Client
-    import pyrogram
-    import os
-    import asyncio
-    name = os.environ.get("TELEGRAM_NAME")
-    api_id = os.environ.get("TELEGRAM_API_ID")
-    api_hash = os.environ.get("TELEGRAM_API_HASH")
-    phone_number = os.environ.get("TELEGRAM_PHONE_NUMBER")
-    if not all([name, api_id, api_hash, phone_number]):
-        raise Exception("Live scraper credentials are not set in the environment.")
-    
-    # # Log out real quick to destroy session
-    # client = Client(name, api_id=api_id, api_hash=api_hash, phone_number=phone_number)
-    # await client.start()
-    # await client.stop()
-    
-    await asyncio.sleep(2)
-    
-    import time
-
-    async def nested3():
-        print("nested3")
-    
-    async def nested():
-        print("nested")
-        # client = Client(name, api_id=api_id, api_hash=api_hash, phone_number=phone_number)
-        # await client.connect()
-        # await asyncio.sleep(1)
-        # await client.disconnect()
-        AsyncManager.run(nested3())
-        
-    
-    async def super_nested():
-        print("super nested")
-        await (nested())
-        
-    AsyncManager.run(super_nested())
+#     session = StringSession()
+#     client = TelegramClient(session, api_id=int(api_id), api_hash=api_hash)
+#     await client.connect()
+#     if not await client.is_user_authorized():
+#         pytest.skip("Telethon client not authorized.")
+#     await client.disconnect()
