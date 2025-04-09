@@ -54,7 +54,7 @@ class TelegramMessageScraper(IAsyncScraper):
             else:
                 return True
         
-        return AsyncManager.run(_authenticate())
+        return AsyncManager._executor.run(_authenticate())
         
     def get_expected_link_format(self):
         # regex for telegram message links
