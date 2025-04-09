@@ -1,11 +1,11 @@
 from scraipe.async_classes import IAsyncAnalyzer
 from scraipe.classes import IAnalyzer, AnalysisResult
-from scraipe.async_util.async_executors import AsyncManager
+from scraipe.async_util import AsyncManager
 from asyncio import Future
 from typing import List, Tuple
 import asyncio
 
-class MultiAnalyzer(IAnalyzer):
+class MultiAnalyzer(IAsyncAnalyzer):
     """
     MultiAnalyzer is a class that allows for the parallel execution of multiple analyzers.
     It can take IAnalyzer and IAsyncAnalyzer instances and can be used to run multiple
@@ -32,18 +32,20 @@ class MultiAnalyzer(IAnalyzer):
             else:
                 self.sync_analyzers.append(id_analyzer)
                 
-    def _submit_async_analyzers(self, content) -> Future[List[Tuple[int, AnalysisResult]]]:
+    async def run_async_analyze(self, id: int, analyzer: IAsyncAnalyzer, content) -> Tuple[int, AnalysisResult]:
+        return id, await analyzer.async_analyze(content)    
+    
+    async def _submit_async_analyzers(self, content) -> List[Future]:
         # Submit all async analyzer tasks for parallel execution
-        async def run_async_analyze(id: int, analyzer: IAsyncAnalyzer) -> Tuple[int, AnalysisResult]:
-            return id, await analyzer.async_analyze(content)
-        tasks = [run_async_analyze(id, analyzer) for id, analyzer in self.async_analyzers]
-        async def run_tasks() -> List[Tuple[int, AnalysisResult]]:
-            results_with_ids: List[Tuple[int, AnalysisResult]] = []
-            async for result in AsyncManager.async_run_multiple(tasks):
-                results_with_ids.append(result)
-            return results_with_ids
-        future = AsyncManager.submit(run_tasks())
-        return future
+
+        tasks = [self.run_async_analyze(id, analyzer, content) for id, analyzer in self.async_analyzers]
+        
+        futures = []
+        # Submit tasks to the executor
+        for task in tasks:
+            future = AsyncManager.get_executor().submit(task)
+            futures.append(future)        
+        return futures
         
     def _run_sync_analyzers(self, content) -> List[Tuple[int, AnalysisResult]]:
         # Run all sync analyzers in serial
@@ -100,12 +102,14 @@ class MultiAnalyzer(IAnalyzer):
             debug_message = "All analyzers failed... " + self.debug_delimiter.join(debug_chain)
             return AnalysisResult.fail(debug_message)
 
-    def analyze(self, content):
-        future = self._submit_async_analyzers(content)
+    async def async_analyze(self, content):
+        futures = await self._submit_async_analyzers(content)
         # Run sync analyzers in serial
         sync_results_with_ids = self._run_sync_analyzers(content)
-        # Wait for async results
-        async_results_with_ids = future.result()
+        # Wrap futures
+        futures = [asyncio.wrap_future(future) for future in futures]
+        # Wait for all async results
+        async_results_with_ids = [await completed for completed in asyncio.as_completed(futures)]
         # Combine sync and async results
         results_with_ids = sync_results_with_ids + async_results_with_ids
         # Process results with ids using instance method

@@ -70,6 +70,8 @@ class IAsyncExecutor:
         """
         future = self.submit(coro)
         return await asyncio.wrap_future(future)
+    
+    
             
     async def async_run_multiple(self, tasks: List[Awaitable[Any]], max_workers:int=10) -> AsyncGenerator[Any, None]:
         """
