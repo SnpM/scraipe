@@ -5,6 +5,7 @@ from concurrent.futures import Future
 
 from typing import List, cast, final, Tuple
 import re
+from pydantic import BaseModel
 
 @final
 class IngressRule():
@@ -15,16 +16,19 @@ class IngressRule():
         match (re.Pattern): A compiled regular expression used to match URLs.
         scraper (IScraper): An instance of a scraper to be used when the URL matches.
     """
-    pattern: re.Pattern
+    pattern: str|re.Pattern
     scraper: IScraper
+    exclusive: bool = False
     def __init__(self,
                  pattern: str | re.Pattern,
-                 scraper: IScraper):
+                 scraper: IScraper,
+                 exclusive: bool = False):
         """
         Initialize the IngressRule with a match string and a scraper.
         Args:
             match (str|re.Pattern): The regex pattern to match against URLs.
             scraper (IScraper): The scraper to use for this match.
+            exclusive (bool): If True, this rule is exclusive and no other rules will be processed if it matches.
         """
         if isinstance(pattern, str):
             try:
@@ -35,21 +39,22 @@ class IngressRule():
             self.pattern = pattern
         else:
             raise ValueError("match must be a string or a compiled regex pattern")
-        assert isinstance(self.pattern, re.Pattern), "self.match must be a regex pattern"
         
-        assert isinstance(scraper, IScraper), "scraper must be an instance of IScraper"
         self.scraper = scraper
+        
+        self.exclusive = exclusive
     def __str__(self):
         return f"IngressRule(match={self.pattern}, scraper={self.scraper})"
     def __repr__(self):
         return self.__str__()
     @staticmethod
-    def from_scraper(scraper:IScraper) -> 'IngressRule':
+    def from_scraper(scraper:IScraper, exclusive:bool = False) -> 'IngressRule':
         """
         Create an IngressRule from a scraper instance and its expected link format.
 
         Args:
             scraper (IScraper): The scraper to use for this rule.
+            exclusive (bool): If True, this rule is exclusive and no other rules will be processed if it matches.
 
         Returns:
             IngressRule: An IngressRule instance with a match that always returns True.
@@ -57,7 +62,7 @@ class IngressRule():
         match = scraper.get_expected_link_format()
         if match is None:
             match = r".*"
-        return IngressRule(match, scraper)
+        return IngressRule(match, scraper, exclusive=exclusive)
 
 class MultiScraper(IAsyncScraper):
     """
@@ -122,7 +127,7 @@ class MultiScraper(IAsyncScraper):
                 result = await self._run_scraper(url, rule.scraper)
                 process_results.append((rule,result))
                 # Stop processing after first success
-                if result.success:
+                if result.success or rule.exclusive:
                     break
         return process_results
     
