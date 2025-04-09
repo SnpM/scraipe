@@ -176,13 +176,11 @@ class Workflow:
         
         # Create a ScrapeResult from each row
         # If it fails, log the error and continue
-        print(data)
         results:List[ScrapeResult] = []
         for i, row in data.iterrows():
             try:
                 result = ScrapeResult(**row.to_dict())
             except ValidationError as e:
-                print("asdf")
                 self.logger.info(f"Failed to update scrape result {row}. Error: {e}")
             else:
                 results.append(result)

@@ -167,8 +167,6 @@ class TelegramMessageScraper(IAsyncScraper):
             content = await self._get_telegram_content(username, message_id)
             assert content is not None, f"Message {message_id} from {username} is None."
         except Exception as e:
-            import traceback
-            print(traceback.format_exc())
             return ScrapeResult.fail(url, f"Failed to scrape due to exception: {e}")
         return ScrapeResult.succeed(url, content)
 
