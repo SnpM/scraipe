@@ -104,22 +104,22 @@ class MultiScraper(IAsyncScraper):
         assert isinstance(debug_delimiter, str), "debug_delimiter must be a string"
         self.debug_delimiter = debug_delimiter
         
-    def _run_scraper(self, link:str, scraper:IScraper) -> ScrapeResult:
+    async def _run_scraper(self, link:str, scraper:IScraper) -> ScrapeResult:
         if isinstance(scraper, IAsyncScraper):
             async_scraper = cast(IAsyncScraper, scraper)
-            result = AsyncManager.run(async_scraper.async_scrape(link))
+            result = await async_scraper.async_scrape(link)
         else:
             result = scraper.scrape(link)
         return result
     
     
-    def _process_rules(self, rules:List[IngressRule], url:str) -> List[Tuple[IngressRule,ScrapeResult]]:
+    async def _process_rules(self, rules:List[IngressRule], url:str) -> List[Tuple[IngressRule,ScrapeResult]]:
         """Returns a ScrapeResult if a run succeeded; else None"""
         process_results = []
         for rule in rules:
             if re.search(rule.pattern, url):
                 # If the rule matches, use the associated scraper
-                result = self._run_scraper(url, rule.scraper)
+                result = await self._run_scraper(url, rule.scraper)
                 process_results.append((rule,result))
                 # Stop processing after first success
                 if result.success:
@@ -152,7 +152,7 @@ class MultiScraper(IAsyncScraper):
         return result
         
 
-    async def scrape(self, url: str) -> ScrapeResult:
+    async def async_scrape(self, url: str) -> ScrapeResult:
         """
         Scrape the given URL using the appropriate scraper based on ingress rules.
 
@@ -162,5 +162,5 @@ class MultiScraper(IAsyncScraper):
         Returns:
             ScrapeResult: The result of the scrape.
         """
-        process_results = self._process_rules(rules=self.ingress_rules, url=url)
+        process_results = await self._process_rules(rules=self.ingress_rules, url=url)
         return self._compile_results(url, process_results)
