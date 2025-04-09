@@ -152,7 +152,7 @@ class MultiScraper(IAsyncScraper):
                 # Return the successful ScrapeResult
                 return result
         # No successful results; return failure
-        error_message = f"No scraper could handle {url}{self.debug_delimiter}{debug_message}"
+        error_message = f"No scrapers could handle link{self.debug_delimiter}{debug_message}"
         result = ScrapeResult.fail(url, error_message)
         return result
         
