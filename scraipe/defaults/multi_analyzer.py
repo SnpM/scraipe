@@ -1,6 +1,6 @@
 from scraipe.async_classes import IAsyncAnalyzer
 from scraipe.classes import IAnalyzer, AnalysisResult
-from scraipe.async_util import AsyncManager
+from scraipe.async_util.async_executors import AsyncManager
 from asyncio import Future
 from typing import List, Tuple
 import asyncio

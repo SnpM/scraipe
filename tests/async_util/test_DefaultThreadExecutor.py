@@ -1,6 +1,6 @@
 import asyncio
 import pytest
-from scraipe.async_util import DefaultBackgroundExecutor
+from scraipe.async_util.async_executors import DefaultBackgroundExecutor
 from asdftimer import AsdfTimer as Timer
 
 async def successful_async_function(a, b):

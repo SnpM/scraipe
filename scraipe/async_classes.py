@@ -42,7 +42,7 @@ class IAsyncScraper(IScraper):
         Returns:
             ScrapeResult: The result of the scrape.
         """
-        return AsyncManager.run(self.async_scrape(link))
+        return AsyncManager.get_executor().run(self.async_scrape(link))
     
     def scrape_multiple(self, links) -> Generator[Tuple[str, ScrapeResult], None, None]:
         """
@@ -60,7 +60,7 @@ class IAsyncScraper(IScraper):
                 return link, await self.async_scrape(link)
             return task()
         tasks = [make_task(link) for link in links]
-        return AsyncManager.run_multiple(tasks, self.max_workers)
+        return AsyncManager.get_executor().run_multiple(tasks, self.max_workers)
             
 class IAsyncAnalyzer(IAnalyzer):
     """
@@ -101,7 +101,7 @@ class IAsyncAnalyzer(IAnalyzer):
         Returns:
             AnalysisResult: The result of the analysis.
         """
-        return AsyncManager.run(self.async_analyze(content))
+        return AsyncManager.get_executor().run(self.async_analyze(content))
     
     def analyze_multiple(self, contents: dict) -> "Generator[Tuple[str, AnalysisResult], None, None]":
         """
@@ -119,4 +119,4 @@ class IAsyncAnalyzer(IAnalyzer):
                 return link, await self.async_analyze(content)
             return task()
         tasks = [make_task(link, content) for link, content in contents.items()]
-        return AsyncManager.run_multiple(tasks, self.max_workers)
+        return AsyncManager.get_executor().run_multiple(tasks, self.max_workers)

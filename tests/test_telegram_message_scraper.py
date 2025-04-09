@@ -2,6 +2,7 @@ import pytest
 from scraipe.extended.telegram_message_scraper import TelegramMessageScraper
 from scraipe.classes import ScrapeResult
 from unittest.mock import AsyncMock, patch, MagicMock
+import os
 
 TARGET_MODULE = TelegramMessageScraper.__module__
 
@@ -93,4 +94,48 @@ def test_mock_scrape_nonexistent_message(mock_scraper):
     assert isinstance(result, ScrapeResult)
     assert result.scrape_success == False
     assert result.content is None
+    
 
+@pytest.mark.asyncio
+@pytest.mark.skipif(os.environ.get("PYROGRAM") is None, reason="Opt in to run this test.")
+async def test_pyrogram_client(request):
+    """A niche test to ensure pyrogram client works as expected in Scraipe's sync/async contexts."""
+    
+    from scraipe.async_util import AsyncManager
+    from pyrogram import Client
+    import pyrogram
+    import os
+    import asyncio
+    name = os.environ.get("TELEGRAM_NAME")
+    api_id = os.environ.get("TELEGRAM_API_ID")
+    api_hash = os.environ.get("TELEGRAM_API_HASH")
+    phone_number = os.environ.get("TELEGRAM_PHONE_NUMBER")
+    if not all([name, api_id, api_hash, phone_number]):
+        raise Exception("Live scraper credentials are not set in the environment.")
+    
+    # # Log out real quick to destroy session
+    # client = Client(name, api_id=api_id, api_hash=api_hash, phone_number=phone_number)
+    # await client.start()
+    # await client.stop()
+    
+    await asyncio.sleep(2)
+    
+    import time
+
+    async def nested3():
+        print("nested3")
+    
+    async def nested():
+        print("nested")
+        # client = Client(name, api_id=api_id, api_hash=api_hash, phone_number=phone_number)
+        # await client.connect()
+        # await asyncio.sleep(1)
+        # await client.disconnect()
+        AsyncManager.run(nested3())
+        
+    
+    async def super_nested():
+        print("super nested")
+        await (nested())
+        
+    AsyncManager.run(super_nested())

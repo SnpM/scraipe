@@ -59,7 +59,7 @@ class IngressRule():
             match = r".*"
         return IngressRule(match, scraper)
 
-class MultiScraper(IScraper):
+class MultiScraper(IAsyncScraper):
     """
     A scraper that uses multiple ingress rules to determine how to scrape a link.
 
@@ -152,7 +152,7 @@ class MultiScraper(IScraper):
         return result
         
 
-    def scrape(self, url: str) -> ScrapeResult:
+    async def scrape(self, url: str) -> ScrapeResult:
         """
         Scrape the given URL using the appropriate scraper based on ingress rules.
 

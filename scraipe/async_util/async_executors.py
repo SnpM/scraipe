@@ -1,5 +1,4 @@
 from abc import abstractmethod, ABC
-from scraipe.classes import IScraper, ScrapeResult
 import asyncio
 from typing import final, Any, Callable, Awaitable, List, Generator, Tuple, AsyncGenerator
 import threading
@@ -7,9 +6,31 @@ from concurrent.futures import Future, TimeoutError
 from queue import Queue
 import time
 import asyncio
+from scraipe.async_util.common import get_running_loop, get_running_thread, wrap_asyncio_future
+from scraipe.async_util.future_processor import FutureProcessor
 
+import logging
+
+@final
+class TaskInfo:
+    def __init__(self, future:Future, event_loop:asyncio.AbstractEventLoop=None, thread:threading.Thread=None):
+        """
+        Stores information about a task for managing its execution in different contexts.
+        """
+        self.future = future
+        self.event_loop = event_loop
+        self.thread = thread
+class TaskResult:
+    def __init__(self, success:bool, output:Any=None, exception:Exception=None):
+        """
+        Represents the result of a task execution.
+        """
+        self.success = success
+        self.output = output
+        self.exception = exception
 # Base interface for asynchronous executors.
 class IAsyncExecutor:
+    future_processor = FutureProcessor()
     @abstractmethod
     def submit(self, coro: Awaitable[Any]) -> Future:
         """
@@ -33,8 +54,9 @@ class IAsyncExecutor:
         Returns:
             The result of the coroutine.
         """
-        future = self.submit(coro)
-        return future.result()        
+        future = self.submit(coro)           
+        result = future.result()#self.future_processor.get_future_result(future)
+        return result
     
     async def async_run(self, coro: Awaitable[Any]) -> Any:
         """
@@ -48,20 +70,61 @@ class IAsyncExecutor:
         """
         future = self.submit(coro)
         return await asyncio.wrap_future(future)
+            
+    async def async_run_multiple(self, tasks: List[Awaitable[Any]], max_workers:int=10) -> AsyncGenerator[Any, None]:
+        """
+        Run multiple coroutines in parallel using the underlying executor.
+        Limits the number of concurrent tasks to max_workers.
+        """
+        assert max_workers > 0, "max_workers must be greater than 0"
+        semaphore = asyncio.Semaphore(max_workers)
+        
+        async def run(coro: Awaitable[Any], sem: asyncio.Semaphore) -> Any:
+            async with sem:
+                try:
+                    return (True, await self.async_run(coro))
+                except Exception as e:
+                    return (False, e)
+                
+        coros = [run(task, semaphore) for task in tasks]
+        for completed in asyncio.as_completed(coros):
+            success,output = await completed
+            if not success:
+                yield output
+            yield output
+
+    def run_multiple(self, tasks: List[Awaitable[Any]], max_workers:int=10) -> Generator[Any, None, None]:
+        """
+        Run multiple coroutines in parallel using the underlying executor.
+        Block calling thread and yield results as they complete.
+        
+        Args:
+            tasks: A list of coroutines to run.
+            max_workers: The maximum number of concurrent tasks.
+        """
+        DONE = object()  # Sentinel value to indicate completion
+        result_queue: Queue = Queue()
+
+        async def producer() -> None:
+            async for result in self.async_run_multiple(tasks, max_workers=max_workers):
+                result_queue.put(result)
+            result_queue.put(DONE)
+        
+        self.submit(producer())
+        
+        POLL_INTERVAL = 0.01  # seconds
+        done = False
+        while not done:
+            time.sleep(POLL_INTERVAL)
+            while not result_queue.empty():
+                result = result_queue.get()
+                if result is DONE:
+                    done = True
+                    break
+                yield result  
     
     def shutdown(self, wait: bool = True) -> None:
-        pass
-
-def get_running_thread() -> threading.Thread|None:
-    """
-    Returns the current running thread.
-    """
-    return threading.current_thread()
-def get_running_loop() -> asyncio.AbstractEventLoop|None:
-    """
-    Returns the current running event loop or None if there is no running loop.
-    """
-    return asyncio._get_running_loop()
+        pass    
 
 @final
 class DefaultBackgroundExecutor(IAsyncExecutor):
@@ -74,6 +137,8 @@ class DefaultBackgroundExecutor(IAsyncExecutor):
         self._loop = asyncio.new_event_loop()
         self._thread = threading.Thread(target=_start_loop, daemon=True)
         self._thread.start()
+        self._future_processor = FutureProcessor()
+        
         
     def submit(self, coro: Awaitable[Any]) -> Future:
         """
@@ -85,10 +150,8 @@ class DefaultBackgroundExecutor(IAsyncExecutor):
         Returns:
             A Future object representing the execution of the coroutine.
         """
-        if get_running_loop() is not self._loop:
-            return asyncio.run_coroutine_threadsafe(coro, self._loop)
-        
-        return asyncio.ensure_future(coro, loop=self._loop)
+        #assert get_running_loop() is not self._loop, "Cannot submit to the same event loop"
+        return asyncio.run_coroutine_threadsafe(coro, self._loop)
     
     def shutdown(self, wait: bool = True) -> None:
         """
@@ -173,6 +236,7 @@ class EventLoopPoolExecutor(IAsyncExecutor):
         else:
             # Otherwise, run it in the event loop's thread.
             future = asyncio.run_coroutine_threadsafe(coro, loop)
+            
         future.add_done_callback(lambda f: self._decrement_pending(index))
         return future
                 
@@ -191,127 +255,3 @@ class EventLoopPoolExecutor(IAsyncExecutor):
         self.threads.clear()
         self.pending_tasks.clear()
                 
-class AsyncManager:
-    """
-    A static manager for asynchronous execution in a synchronous context.
-    
-    By default, it uses MainThreadExecutor. To enable multithreading,
-    call enable_multithreading() to switch to multithreaded event loops.
-    """
-    _executor: IAsyncExecutor = DefaultBackgroundExecutor()
-
-    @staticmethod
-    def run(coro: Awaitable[Any]) -> Any:
-        """
-        Run the given coroutine using the underlying executor.
-        
-        Args:
-            coro: The coroutine to execute.
-        
-        Returns:
-            The result of the coroutine.
-        """
-        return AsyncManager._executor.run(coro)
-
-    @staticmethod
-    async def async_run(coro: Awaitable[Any]) -> Any:
-        """
-        Run the given coroutine using the underlying executor asynchronously.
-        
-        Args:
-            coro: The coroutine to execute.
-        
-        Returns:
-            The result of the coroutine.
-        """
-        return await AsyncManager._executor.async_run(coro)
-    
-    @staticmethod
-    def submit(coro: Awaitable[any]) -> Future:
-        """
-        Begin running the given coroutine using the underlying executor.
-        """
-        return AsyncManager._executor.submit(coro)
-
-    @staticmethod
-    async def async_run_multiple(tasks: List[Awaitable[Any]], max_workers:int=10) -> AsyncGenerator[Any, None]:
-        """
-        Run multiple coroutines in parallel using the underlying executor.
-        Limits the number of concurrent tasks to max_workers.
-        """
-        assert max_workers > 0, "max_workers must be greater than 0"
-        semaphore = asyncio.Semaphore(max_workers)
-        
-        async def run(coro: Awaitable[Any], sem: asyncio.Semaphore) -> Any:
-            async with sem:
-                result = await AsyncManager._executor.async_run(coro)
-                return result
-                
-        coros = [run(task, semaphore) for task in tasks]
-        for completed in asyncio.as_completed(coros):
-            yield await completed
-
-    @staticmethod
-    def run_multiple(tasks: List[Awaitable[Any]], max_workers:int=10) -> Generator[Any, None, None]:
-        """
-        Run multiple coroutines in parallel using the underlying executor.
-        Block calling thread and yield results as they complete.
-        
-        Args:
-            tasks: A list of coroutines to run.
-            max_workers: The maximum number of concurrent tasks.
-        """
-        DONE = object()  # Sentinel value to indicate completion
-        result_queue: Queue = Queue()
-
-        async def producer() -> None:
-            async for result in AsyncManager.async_run_multiple(tasks, max_workers=max_workers):
-                result_queue.put(result)
-            result_queue.put(DONE)
-        
-        AsyncManager._executor.submit(producer())
-        
-        POLL_INTERVAL = 0.01  # seconds
-        done = False
-        while not done:
-            time.sleep(POLL_INTERVAL)
-            while not result_queue.empty():
-                result = result_queue.get()
-                if result is DONE:
-                    done = True
-                    break
-                yield result  
-
-    @staticmethod
-    def set_executor(executor: IAsyncExecutor) -> None:
-        """
-        Replace the current asynchronous executor used by AsyncManager with a new executor.
-        
-        Args:
-            executor: An object that implements the IAsyncExecutor interface, responsible
-                      for managing and executing asynchronous tasks.
-        
-        Returns:
-            None.
-        """
-        AsyncManager._executor = executor
-
-    @staticmethod
-    def enable_multithreading(pool_size: int = 3) -> None:
-        """
-        Switch to a multithreaded executor. Tasks will then be dispatched to background threads.
-        """
-        # Shut down the current executor if it's a BackgroundLoopExecutor
-        AsyncManager._executor.shutdown(wait=True)
-        # Create a new BackgroundLoopExecutor with the specified number of workers
-        AsyncManager._executor = EventLoopPoolExecutor(pool_size)
-    
-    @staticmethod
-    def disable_multithreading() -> None:
-        """
-        Switch back to the main thread executor.
-        """
-        # Shut down the current executor if it's a BackgroundLoopExecutor
-        AsyncManager._executor.shutdown(wait=True)
-        # Create a new MainThreadExecutor
-        AsyncManager._executor = DefaultBackgroundExecutor()
