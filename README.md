@@ -18,7 +18,7 @@ Under development.
 
 ## Help
 
-See [documentation](https://scraipe.readthedocs.io/en/latest/) for more details.
+See [documentation](https://scraipe.readthedocs.io/en/latest/) for details.
 
 ## Installation
 
