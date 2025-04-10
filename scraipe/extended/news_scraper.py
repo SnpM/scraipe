@@ -17,19 +17,25 @@ class NewsScraper(IAsyncScraper):
     )
 
     def __init__(self, headers=None):
+        """Initialize the NewsScraper with optional custom headers.
+
+        Args:
+            headers (dict, optional): A dictionary of HTTP headers to use for requests.
+                Defaults to a User-Agent header.
+        """
         self.headers = headers or {"User-Agent": NewsScraper.DEFAULT_USER_AGENT}
         
-    async def get_site_html(self, url: str):
+    async def get_site_html(self, url: str) -> str:
         """Retrieve HTML content from the specified URL using aiohttp.
         
-        Parameters:
+        Args:
             url (str): The URL of the webpage to scrape.
         
         Returns:
             str: The HTML content of the webpage.
         
         Raises:
-            Exception: If the HTTP response status is not 200.
+            aiohttp.ClientResponseError: If the HTTP response status is not 200.
         """
         async with aiohttp.ClientSession(headers=self.headers) as session:
             async with session.get(url) as response:
@@ -40,12 +46,12 @@ class NewsScraper(IAsyncScraper):
     async def async_scrape(self, url: str) -> ScrapeResult:
         """Asynchronously scrape the specified URL and extract its content.
         
-        Parameters:
+        Args:
             url (str): The URL to scrape and extract content from.
         
         Returns:
-            ScrapeResult: A success result with the extracted text if successful,
-            or a failure result containing an error message on failure.
+            ScrapeResult: A ScrapeResult object containing the extracted text if successful,
+                or an error message if the scraping fails.
         """
         try:
             try:
