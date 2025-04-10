@@ -1,20 +1,20 @@
 # Using LLM Analyzers
 
-LLM analyzers provide intelligent feature extraction with large language models. This page covers how to configure and use LLM analyzers provided by Scraipe.
+Large language models can provide intelligent feature extraction with tailored prompts. This page covers how to configure and use LLM analyzers provided by Scraipe.
 
 ## Overview
 
-Scraipe provides [`GeminiAnalyzer`][scraipe.extended.llm_analyzers.GeminiAnalyzer] and [`OpenAiAnalyzer`][scraipe.extended.llm_analyzers.GeminiAnalyzer] to leverage these popular cloud-based providers. These analyzers extend [`LlmAnalyzerBase`][scraipe.extended.llm_analyzers.LlmAnalyzerBase], a custom component that handles request orchestration, Pydantic validation, and response processing.
+[`GeminiAnalyzer`][scraipe.extended.llm_analyzers.GeminiAnalyzer] and [`OpenAiAnalyzer`][scraipe.extended.llm_analyzers.GeminiAnalyzer] are included in the `scraipe[extended]` package. These analyzers extend [`LlmAnalyzerBase`][scraipe.extended.llm_analyzers.LlmAnalyzerBase], an [`IAsyncScraper`][scraipe.async_classes.IAsyncScraper] implementation that orchestrates LLM queries and validates responses.
 
 ## Usage
 
-Most LLM analyzers will need to be configured with the following parameters:
+Most LLM analyzers need to be configured with the following parameters:
 
 - `instruction`: the system instruction to guide the LLM's behavior.
 - `api_key`: the API key to access the LLM provider's service.
 - `pydantic_schema`: a [Pydantic model](https://docs.pydantic.dev/latest/concepts/models/) that defines the schema for the LLM's JSON response. 
 
-The specific configuration options will depend on the analyzer's implementation. Here is an example using [`GeminiAnalyzer`][scraipe.extended.llm_analyzers.GeminiAnalyzer]. Note that you will need a [Gemini API key](https://ai.google.dev/gemini-api/docs/api-key).
+The specific configuration parameters will depend on the analyzer's implementation. Here is an example using [`GeminiAnalyzer`][scraipe.extended.llm_analyzers.GeminiAnalyzer]. Note that you will need a [Gemini API key](https://ai.google.dev/gemini-api/docs/api-key).
 
 1. Import dependencies and API key.
 
@@ -65,7 +65,7 @@ The specific configuration options will depend on the analyzer's implementation.
     print(result.output)
     ```
 
-Running [our script](https://github.com/SnpM/scraipe/blob/main/examples/gemini_analyzer_example.py) outputs the extracted topic and sentiment of the article:
+Running [this script](https://github.com/SnpM/scraipe/blob/main/examples/gemini_analyzer_example.py) outputs the extracted topic and sentiment of the article:
 
 ```bash
 {'topic': 'web scraping and data analysis', 'sentiment': 'positive'}
@@ -73,8 +73,8 @@ Running [our script](https://github.com/SnpM/scraipe/blob/main/examples/gemini_a
 
 ## Conclusion
 
-The topic & sentiment analyzer we configured can be plugged into a [basic workflow](../get_started/basic_workflow.md) for your project's needs. Consider pairing this analyzer with [NewsScraper][scraipe.extended.NewsScraper] to feed it the most relevant content from news sites.
+The topic & sentiment analyzer we configured can plugged into a [basic workflow](../get_started/basic_workflow.md). Consider pairing this analyzer with [NewsScraper][scraipe.extended.NewsScraper] to feed it the most relevant content from news sites.
 
 Check out [celebrities_example.ipynb](https://github.com/SnpM/scraipe/blob/main/examples/celebrities_example.ipynb) for an advanced workflow using [`NewsScraper`][scraipe.extended.NewsScraper] and [`OpenAiAnalyzer`][scraipe.extended.OpenAiAnalyzer].
 
-To integrate other LLMs, check out how to [write custom LLM scrapers](../advanced_usage/./extending_llm_analyzers.md).
+To integrate other LLms, check out how to [Custom LLM Analyzers](../advanced_usage/./extending_llm_analyzers.md).

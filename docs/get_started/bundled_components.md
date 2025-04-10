@@ -1,8 +1,5 @@
 # Bundled Components
-Scraipe comes with powerful scrapers and analyzers that we are continuously expanding.
-Plug these into your workflow to suit your diverse project needs.
-
-If you need more functionality, [write your own components](../advanced_usage/custom_components.md).
+Scraipe comes with a collection of powerful scrapers and analyzers that will keep expanding. If you need more functionality, see [custom components](../advanced_usage/custom_components.md).
 
 
 ## Scrapers
@@ -20,8 +17,8 @@ If you need more functionality, [write your own components](../advanced_usage/cu
 - **[`OpenAiAnalyzer^`][scraipe.extended.llm_analyzers.OpenAiAnalyzer]**: Uses OpenAI's API to analyze content based on a provided instruction and optional schema validation.
 - **[`GeminiAnalyzer^`][scraipe.extended.llm_analyzers.GeminiAnalyzer]**: Integrates Google Gemini's API to analyze content based on instruction and mandatory schema validation. 
 
-<sub>Components with a caret^ require `scraipe[extended]` dependencies.</sub>
+<sub>Components with a caret^ require `scraipe[extended]`.</sub>
 
 ---
 
-These scrapers and analyzers can be plugged into your [basic workflow](./basic_workflow.md).
+Plug these components into your [basic workflow](./basic_workflow.md).
