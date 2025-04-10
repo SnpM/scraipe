@@ -6,7 +6,7 @@
 
 ## Why use Scraipe?
 
-- **Versatile Scraping**: Scraipe integrates popular libraries such as `aiohttp`, `trafilatura`, and `telethon` to efficiently scrape diverse documents.
+- **Versatile Scraping**: Scraipe integrates popular libraries such as `aiohttp`, `trafilatura`, and `telethon` to efficiently scrape diverse documents.f
 - **Speed**: Run batches of asynchronous IO-bound tasks in parallel through a simple synchronous API.
 - **Customization**: Scraipe's modular architecture allows you to easily extend or create new scrapers and analyzers.
 - **LLM Analysis**: Use LLM models to extract structured information from unstructured content.
@@ -66,7 +66,7 @@
 
 ## Explore
 
-Check out the following resources to get more familiar with Scraipe:
+Check out these awesome resources to get more familiar with Scraipe:
 
 - [Basic Workflow](./get_started/basic_workflow.md)
 - [Custom Scrapers and Analyzers](./advanced_usage/custom_components.md)
