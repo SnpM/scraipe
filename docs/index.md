@@ -66,7 +66,7 @@
 
 ## Explore
 
-Check out these awesome resources to get more familiar with Scraipe:
+Check out these awesome resources to starting cooking.
 
 - [Basic Workflow](./get_started/basic_workflow.md)
 - [Custom Scrapers and Analyzers](./advanced_usage/custom_components.md)
