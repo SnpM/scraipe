@@ -3,9 +3,7 @@
 [![versions](https://img.shields.io/pypi/pyversions/scraipe.svg)](https://github.com/snpm/scraipe)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/SnpM/scraipe/blob/main/LICENSE)
 
-Scraping and analysis framework.
-
-Under development.
+Scraping and analysis framework. Under development.
 
 ## Features
 - **Versatile Scraping**: Leverage custom scrapers that handle Telegram messages, news articles, and links that require multiple ingress rules.
@@ -18,7 +16,7 @@ Under development.
 
 ## Help
 
-See [documentation](https://scraipe.readthedocs.io/en/latest/) for more details.
+See [documentation](https://scraipe.readthedocs.io/en/latest/) for details.
 
 ## Installation
 
