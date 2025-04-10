@@ -4,7 +4,9 @@ Scrapers and analyzers are modular, so you can extend the functionality on exist
 
 ## Custom Scrapers
 
-To create a custom scraper, extend [`IScraper`][scraipe.classes.IScraper] and implement `scrape()`. [`ExampleScraper`](https://github.com/SnpM/scraipe/blob/main/scraipe/defaults/examples.py) is a minimal implementation that simply captures the URL.
+To create a custom scraper, extend [`IScraper`][scraipe.classes.IScraper] and implement `scrape()`. The `scrape()` method should return an instance of [`ScrapeResult`][scraipe.classes.ScrapeResult] that can be created via `ScrapeResult.fail() `or `ScrapeResult.succeed()`.
+
+[`ExampleScraper`](https://github.com/SnpM/scraipe/blob/main/examples/example_custom_components.py) is a minimal implementation that simply captures the URL.
 
 ```python
 from scraipe.classes import IScraper, ScrapeResult
@@ -19,13 +21,12 @@ class ExampleScraper(IScraper):
         return ScrapeResult.succeed(url, content)
 ```
 
-The `scrape()` method should return an instance of [`ScrapeResult`][scraipe.classes.ScrapeResult] that can be created via `ScrapeResult.fail() `or `ScrapeResult.succeed()`.
 
-To facilitate fault tolerance, `scrape()` implementations should not raise exceptions. Instead, debug and error information can be stored in `ScrapeResult.scrape_error`, a field that is set when you call `ScrapeResult.fail()`.
+To facilitate fault tolerance, `scrape()` implementations should not raise exceptions. Instead, debug and error information should be stored in `ScrapeResult.scrape_error`, a field that is set when you call `ScrapeResult.fail()`.
 
 ## Custom Analyzers
 
-To create a custom analyzer, extend [`IAnalyzer`][scraipe.classes.IAnalyzer] and implement the `analyze()` method. [ExampleAnalyzer](https://github.com/SnpM/scraipe/blob/main/scraipe/defaults/examples.py) is a minimal implementation that reverses the content.
+To create a custom analyzer, extend [`IAnalyzer`][scraipe.classes.IAnalyzer] and implement the `analyze()` method. [ExampleAnalyzer](https://github.com/SnpM/scraipe/blob/main/examples/example_custom_components.py) is a minimal implementation that reverses the content.
 
 ```python
 from scraipe.classes import IAnalyzer, AnalysisResult
@@ -43,11 +44,11 @@ class ExampleAnalyzer(IAnalyzer):
 
 The `analyze()` method should return an instance of [`AnalysisResult`][scraipe.classes.AnalysisResult] that can be created via `AnalysisResult.fail() `or `AnalysisResult.succeed()`.
 
-Similar to `IScraper.scrape()` implementations, `analyze()` should not raise exceptions. Instead, any errors or debug information should be captured in the `AnalysisResult` object, which can be set using `AnalysisResult.fail()`.
+Similar to `IScraper.scrape()`, `analyze()` should not raise exceptions. Instead, any errors or debug information should stored in the an `AnalysisResult.analysis_result` attribute, which is set when you call `AnalysisResult.fail()` function.
 
 ## Async Scrapers and Analyzers
 
-Scraping and analyzing often require IO-bound operations such as waiting for responses from the web. These operations should be optimized to run in parallel using asynchronous logic. Implementing asynchronous logic for components adds very little complexity. Instead of extending `IScraper` or `IAnalyzer`, simply extend the `IAsyncScraper` and `IAsyncAnalyzer` interfaces.
+Scraping and analyzing often require IO-bound operations such as waiting for responses from the web. These operations should be optimized to run in parallel using asynchronous logic. Implementing asynchronous logic for components is just as simple. Instead of extending `IScraper` or `IAnalyzer`, extend the `IAsyncScraper` and `IAsyncAnalyzer` interfaces.
 
 For async scrapers, implement `async_scrape()` using asynchronous code:
 

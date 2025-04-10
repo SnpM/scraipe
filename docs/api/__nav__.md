@@ -1,5 +1,9 @@
 * [async_classes](async_classes.md)
-* [async_util](async_util.md)
+* async_util
+    * [async_executors](async_util/async_executors.md)
+    * [async_manager](async_util/async_manager.md)
+    * [common](async_util/common.md)
+    * [future_processor](async_util/future_processor.md)
 * [classes](classes.md)
 * defaults
     * [multi_analyzer](defaults/multi_analyzer.md)

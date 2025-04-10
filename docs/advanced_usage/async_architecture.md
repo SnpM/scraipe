@@ -1,6 +1,9 @@
 # Async Architecture
 
-Scraipe features a highly portable synchronous API. Sadly, many scraping and analysis tasks are IO-bound meaning we have to wait a lot for network responses. To achieve high performance, most scrapers and analyzers need to execute their logic asynchronously. This page provides a deep dive into how Scraipe seamlessly orchestrates synchronous and asynchronous code. If you just want to create async components, check out the guide on [custom components](./custom_components.md#async-scrapers-and-analyzers).
+
+Many scraping and analysis tasks are IO-bound meaning we have to wait a lot for network responses. To achieve high performance, most scrapers and analyzers need to execute their logic asynchronously. Scraipe's synchronous API cannot directly execute asynchronous code, so Scraipe manages this interaction under the hood.
+
+ This page provides a deep dive into how Scraipe seamlessly orchestrates synchronous and asynchronous code. If you just want to create async components, check out the guide on [custom components](./custom_components.md#async-scrapers-and-analyzers).
 
 ## Async Interfaces
 
@@ -13,25 +16,19 @@ The synchronous wrappers use Async Orchestration to run the async functions from
 
 ## Async Orchestration
 
-Scraipe's async orchestration is powered by the [`AsyncManager`][scraipe.async_util.AsyncManager] and implementations of `IAsyncExecutor`. These components ensure seamless integration of asynchronous operations within a synchronous API.
+Scraipe's async orchestration is powered by the [`AsyncManager`][scraipe.async_util.async_manager.AsyncManager] and implementations of `IAsyncExecutor`. These components ensure seamless integration of asynchronous operations within a synchronous API.
 
-### [IAsyncExecutor][scraipe.async_util.IAsyncExecutor]
+### [IAsyncExecutor][scraipe.async_util.async_executors.IAsyncExecutor]
 
 Executors manage the execution of asynchronous tasks. Scraipe provides two implementations of `IAsyncExecutor`:
-- [`DefaultBackgroundExecutor`][scraipe.async_util.DefaultBackgroundExecutor]: Runs a single asyncio event loop in a dedicated background thread. This is the default executor used by `AsyncManager`.
-- [`EventLoopPoolExecutor`][scraipe.async_util.EventLoopPoolExecutor]: Manages a pool of asyncio event loops, each running in its own thread. It balances tasks across the pool for improved concurrency.
+- [`DefaultBackgroundExecutor`][scraipe.async_util.async_executors.DefaultBackgroundExecutor]: Runs a single asyncio event loop in a dedicated background thread. This is the default executor used by `AsyncManager`.
+- [`EventLoopPoolExecutor`][scraipe.async_util.async_executors.EventLoopPoolExecutor]: Manages a pool of asyncio event loops, each running in its own thread. It balances tasks across the pool for improved concurrency.
 
 ### [`AsyncManager`][scraipe.async_util.AsyncManager]
 
-The `AsyncManager` is a static utility that abstracts the complexity of running asynchronous tasks. It's essentially a static wrapper for an instance of an executor.
+The `AsyncManager` is a static provider for an `IAsyncExecutor` instance.
 
-It provides the following functions for async integration.
-
-- `run()`: Executes a coroutine and blocks until it completes.
-- `run_multiple()`: Executes multiple coroutines concurrently and yields results as they complete.
-
-Additionally, class's executor can be configured:
-
-- `set_executor()`: Allows switching between executor instances.
-- `enable_multithreading()`: Enables multithreading by switching the executor to an instance of `EventLoopPoolExecutor`.
+- `get_executor()`: Get the singleton executor instance. This is a `DefaultBackgroundExecutor` instance by default.
+- `set_executor()`: Allows switching between the singleton executor instances.
+- `enable_multithreading(pool_size: int = 3)`: Enables multithreading by switching the executor to an instance of `EventLoopPoolExecutor`. It creates a pool of the given size.
 - `disable_multithreading()`: Disables multithreading by switching the executor to an instance of `DefaultBackgroundExecutor`.

@@ -19,7 +19,7 @@ Make sure scraipe is installed. Scraipe requires python 3.10 or greater.
 
 ## Basic Example
 
-Our basic workflow will use two standard components:
+Our basic workflow will use two [bundled components](./bundled_components.md):
 
 - [`TextScraper`][scraipe.defaults.TextScraper]: gets the content of a website and strips out html tags.
 - [`TextStatsAnalyzer`][scraipe.defaults.TextStatsAnalyzer]: computes word and sentence statistics.
@@ -79,4 +79,4 @@ Analyzing: 100%|█████████████████████�
 
 ## Conclusion
 
-We created a basic workflow to orchestrate web scraping and text stats extraction. Next up, check out [bundled scrapers and analyzers](./bundled_components.md) or learn how to [create custom components](../advanced_usage/custom_components.md) for your project's specific needs.
+We created a basic workflow to orchestrate web scraping and text stats extraction. You can plug other [bundled components](./bundled_components.md) into your workflow or write [create custom components](../advanced_usage/custom_components.md) for your project's specific needs.

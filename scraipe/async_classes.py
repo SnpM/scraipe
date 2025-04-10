@@ -50,7 +50,7 @@ class IAsyncScraper(IScraper):
         Blocks while waiting for results.
         
         Args:
-            urls (list): A list of URLs to scrape.
+            links (list): A list of URLs to scrape.
         
         Returns:
             Generator[Tuple[str, ScrapeResult], None, None]: A generator yielding tuples of URL and ScrapeResult.

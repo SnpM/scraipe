@@ -29,6 +29,7 @@ Scraipe supports LLM-powered feature extraction for advanced content parsing wit
 
 ### GeminiAnalyzer Example
 The [`GeminiAnalyzer`](https://github.com/SnpM/scraipe/blob/main/scraipe/extended/llm_analyzers/gemini_analyzer.py) and [`OpenAiAnalyzer`](https://github.com/SnpM/scraipe/blob/main/scraipe/extended/llm_analyzers/openai_analyzer.py) implementations showcase:
-- Initializing a client for a cloud-based LLM provider.
+
+- Initializing a client from a cloud-based LLM provider.
 - Configuring a request from the provided instruction, content, and Pydantic schema.
 - Returning the LLM provider's response.

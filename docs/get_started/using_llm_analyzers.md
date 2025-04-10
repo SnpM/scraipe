@@ -14,9 +14,9 @@ Most LLM analyzers will need to be configured with the following parameters:
 - `api_key`: the API key to access the LLM provider's service.
 - `pydantic_schema`: a [Pydantic model](https://docs.pydantic.dev/latest/concepts/models/) that defines the schema for the LLM's JSON response. 
 
-The specific configuration options will depend on the analyzer's implementation. Here is an example using `GeminiAnalyzer`. Note that you will need a [Gemini API key](https://ai.google.dev/gemini-api/docs/api-key).
+The specific configuration options will depend on the analyzer's implementation. Here is an example using [`GeminiAnalyzer`][scraipe.extended.llm_analyzers.GeminiAnalyzer]. Note that you will need a [Gemini API key](https://ai.google.dev/gemini-api/docs/api-key).
 
-1. Import dependencies and API key
+1. Import dependencies and API key.
 
     ```python
     import os
@@ -27,7 +27,7 @@ The specific configuration options will depend on the analyzer's implementation.
     gemini_key = os.getenv("GEMINI_API_KEY")
     ```
 
-2. Configure the analyzer with a prompt and schema
+2. Configure the analyzer with a prompt and schema.
     ```python
     # Craft an instruction for the LLM
     instruction = """
@@ -52,7 +52,7 @@ The specific configuration options will depend on the analyzer's implementation.
     )
     ```
 
-3. Analyze and display results
+3. Analyze and display results.
     ```python
     # Analyze an article
     article = """
