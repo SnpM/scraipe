@@ -1,6 +1,9 @@
 import asyncio
 import threading
-from concurrent.futures import Future
+
+from concurrent.futures import Future as ConcurrentFuture
+from inspect import isawaitable
+
 
 def get_running_thread() -> threading.Thread|None:
     """
@@ -13,15 +16,20 @@ def get_running_loop() -> asyncio.AbstractEventLoop|None:
     """
     return asyncio._get_running_loop()
 
-def wrap_asyncio_future(async_future: asyncio.Future) -> Future:
-    blocking_future = Future()
 
-    def transfer_result(asyncio_future: asyncio.Future):
-        try:
-            result = asyncio_future.result()  # Grab result or raise exception
-            blocking_future.set_result(result)
-        except Exception as e:
-            blocking_future.set_exception(e)
+from typing import Protocol, runtime_checkable, Any, Awaitable
+from inspect import isawaitable
 
-    async_future.add_done_callback(transfer_result)
-    return blocking_future
+@runtime_checkable
+class FutureLike(Protocol):
+    def result(self) -> Any: ...
+    def done() -> bool: ...
+    
+def get_awaitable(future: FutureLike) -> Awaitable:
+    """
+    Converts a Future-like object to an awaitable. Should be called from async context.
+    """
+    if isawaitable(future):
+        return future
+    if isinstance(future, ConcurrentFuture):
+        return (asyncio.wrap_future(future))

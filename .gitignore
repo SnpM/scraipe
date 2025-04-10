@@ -182,3 +182,8 @@ poetry.lock
 .vscode/*
 secrets.env
 *.session-journal*
+
+*Cargo.lock
+
+# Prefix to ignore files
+~.*

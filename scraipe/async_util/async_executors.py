@@ -2,18 +2,18 @@ from abc import abstractmethod, ABC
 import asyncio
 from typing import final, Any, Callable, Awaitable, List, Generator, Tuple, AsyncGenerator
 import threading
-from concurrent.futures import Future, TimeoutError
 from queue import Queue
 import time
 import asyncio
-from scraipe.async_util.common import get_running_loop, get_running_thread, wrap_asyncio_future
-from scraipe.async_util.future_processor import FutureProcessor
+from scraipe.async_util.common import get_running_loop, get_running_thread
+from scraipe.async_util.common import FutureLike, get_awaitable
 
 import logging
 
+
 @final
 class TaskInfo:
-    def __init__(self, future:Future, event_loop:asyncio.AbstractEventLoop=None, thread:threading.Thread=None):
+    def __init__(self, future:FutureLike, event_loop:asyncio.AbstractEventLoop=None, thread:threading.Thread=None):
         """
         Stores information about a task for managing its execution in different contexts.
         """
@@ -28,11 +28,11 @@ class TaskResult:
         self.success = success
         self.output = output
         self.exception = exception
+
 # Base interface for asynchronous executors.
 class IAsyncExecutor:
-    future_processor = FutureProcessor()
     @abstractmethod
-    def submit(self, coro: Awaitable[Any]) -> Future:
+    def submit(self, coro: Awaitable[Any]) -> FutureLike:
         """
         Submit a coroutine to the executor.
 
@@ -54,24 +54,19 @@ class IAsyncExecutor:
         Returns:
             The result of the coroutine.
         """
-        future = self.submit(coro)           
-        result = future.result()#self.future_processor.get_future_result(future)
+        future = self.submit(coro)
+        # Assert that future is FutureLike
+        assert isinstance(future, FutureLike), f"Expected {FutureLike}, got {type(future)}"
+        result = future.result()
+        
         return result
     
     async def async_run(self, coro: Awaitable[Any]) -> Any:
-        """
-        Run a coroutine in the executor and return its result.
-        
-        Args:
-            coro: The coroutine to execute.
-        
-        Returns:
-            The result of the coroutine.
-        """
         future = self.submit(coro)
-        return await asyncio.wrap_future(future)
-    
-    
+        # Assert that future is FutureLike
+        assert isinstance(future, FutureLike), f"Expected {FutureLike}, got {type(future)}"
+        awaitable = get_awaitable(future)
+        return await awaitable
             
     async def async_run_multiple(self, tasks: List[Awaitable[Any]], max_workers:int=10) -> AsyncGenerator[Any, None]:
         """
@@ -81,14 +76,15 @@ class IAsyncExecutor:
         assert max_workers > 0, "max_workers must be greater than 0"
         semaphore = asyncio.Semaphore(max_workers)
         
-        async def run(coro: Awaitable[Any], sem: asyncio.Semaphore) -> Any:
+        async def work(coro: Awaitable[Any], sem: asyncio.Semaphore) -> Any:
             async with sem:
                 try:
                     return (True, await self.async_run(coro))
                 except Exception as e:
+                    logging.error(f"Task failed with exception: {output}")
                     return (False, e)
                 
-        coros = [run(task, semaphore) for task in tasks]
+        coros = [work(task, semaphore) for task in tasks]
         for completed in asyncio.as_completed(coros):
             success,output = await completed
             if not success:
@@ -123,7 +119,7 @@ class IAsyncExecutor:
                 if result is DONE:
                     done = True
                     break
-                yield result  
+                yield result
     
     def shutdown(self, wait: bool = True) -> None:
         pass    
@@ -139,10 +135,9 @@ class DefaultBackgroundExecutor(IAsyncExecutor):
         self._loop = asyncio.new_event_loop()
         self._thread = threading.Thread(target=_start_loop, daemon=True)
         self._thread.start()
-        self._future_processor = FutureProcessor()
         
         
-    def submit(self, coro: Awaitable[Any]) -> Future:
+    def submit(self, coro: Awaitable[Any]) -> FutureLike:
         """
         Submit a coroutine to the executor.
         
@@ -220,7 +215,7 @@ class EventLoopPoolExecutor(IAsyncExecutor):
         with self._lock:
             self.pending_tasks[index] -= 1
             
-    def submit(self, coro: Awaitable[Any]) -> Future:
+    def submit(self, coro: Awaitable[Any]) -> FutureLike:
         """
         Submit a coroutine to the executor.
         
@@ -256,4 +251,3 @@ class EventLoopPoolExecutor(IAsyncExecutor):
         self.event_loops.clear()
         self.threads.clear()
         self.pending_tasks.clear()
-                
