@@ -26,10 +26,11 @@ class TelegramMessageScraper(IAsyncScraper):
         phone_number (str): The phone number associated with the Telegram account.
 
     """
-        
+    def is_authenticated(self) -> bool:
+        return self.session_string is not None
     DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
 
-    def __init__(self, api_id: str, api_hash: str, phone_number: str, session_name:str = None):
+    def __init__(self, api_id: str, api_hash: str, phone_number: str, session_name:str = None, password=None, sync_auth: bool = True):
         """
         Initialize the TelegramMessageScraper with necessary connection parameters.
 
@@ -45,44 +46,101 @@ class TelegramMessageScraper(IAsyncScraper):
         self.api_hash = api_hash
         self.phone_number = phone_number
         self.session_lock = Lock()
+        self.phone_code_hash = None
+        self.password = password
         
         logging.info(f"Initializing the Telegram session...")
-        if not self.authenticate():
+        authd = self.authenticate(sync_auth)
+        if sync_auth and not authd:
             raise RuntimeError("Failed to authenticate the Telegram session. Please check your credentials.")
     
-    def authenticate(self) -> bool:
+    def save_session(self, client:TelegramClient):
+        with self.session_lock:
+            # Serialize a session for creating new clients
+            self.session_string = StringSession.save(client.session)
+    
+    
+    def try_get_session_client(self) -> TelegramClient:
+        try:
+            client = TelegramClient(self.session_name, api_id=self.api_id, api_hash=self.api_hash)
+        except Exception as e:
+            logging.warning(f"Failed to acquire SQLite session. Creating a temporary StringSession.")
+            client = TelegramClient(StringSession(), api_id=self.api_id, api_hash=self.api_hash)
+        return client
+    
+    async def _sign_in(self, code: str, client:TelegramClient, phone_number: str, phone_code_hash: str = None, password: str = None):
+        password = None if self.password == "" else self.password
+        phone_code_hash = phone_code_hash if phone_code_hash is not None else self.phone_code_hash
+        
+        if phone_code_hash is None:
+            raise RuntimeError("phone_code_hash is None. Please call authenticate() first.")
+                
+        if client is None:
+            client = self.try_get_session_client()
+            
+        await client.connect()
+        if not await client.is_user_authorized():
+            try:
+                await client.sign_in(phone=phone_number, code=code, phone_code_hash=phone_code_hash, password=password)
+            except telethon.errors.SessionPasswordNeededError as e:
+                if password is None:
+                    logging.warning("Two-factor authentication is enabled. Please configure password.")                
+            
+            if await client.is_user_authorized():
+                self.save_session(client)
+                logging.info("Successfully authenticated.")
+            else:
+                logging.warning("Failed to authenticate. Please check your credentials.")
+                
+            await client.disconnect()
+        else:
+            logging.info("Already authenticated. No need to sign in.")
+    
+    def sign_in(self, code: str, client:TelegramClient=None):
+        """
+        Sign in to the Telegram account using the provided phone number, code, and password.
+
+        Parameters:
+            phone_number (str): The phone number associated with the account.
+            code (str): The verification code sent to the phone number.
+            phone_code_hash (str): The hash of the verification code.
+            password (str): The password for two-factor authentication, if enabled.
+
+        Raises:
+            telethon.errors.SessionPasswordNeededError: If two-factor authentication is enabled and no password is provided.
+        """
+        assert self.phone_code_hash is not None, "phone_code_hash is None. Please call authenticate() first."
+        AsyncManager.get_executor().run(self._sign_in(code, client, self.phone_number, self.phone_code_hash, self.password))
+        
+    def authenticate(self, sync_auth = True) -> bool:
         """
         Authenticate the Telegram session and return whether the authentication was successful.
         """
         async def _authenticate():
             try:
-                try:
-                    
-                    client = TelegramClient(self.session_name, api_id=self.api_id, api_hash=self.api_hash)
-                except Exception as e:
-                    logging.warning(f"Failed to acquire SQLite session. Creating a temporary StringSession.")
-                    client = TelegramClient(StringSession(), api_id=self.api_id, api_hash=self.api_hash)
-                    
-                    
+                client = self.try_get_session_client()
                 is_authd = False
                 
                 await client.connect()
                 if await client.is_user_authorized():
-                    logging.warning("Already authenticated. No need to authenticate again.")
+                    logging.info("Already authenticated. No need to authenticate again.")
                     is_authd = True
                 else:
-                    await client.start(phone=self.phone_number)
+                    sent = await client.send_code_request(phone=self.phone_number)
+                    phone_code_hash = sent.phone_code_hash
+                    self.phone_code_hash = phone_code_hash
+
+                    if sync_auth:
+                        # get input from user and sign in immediately
+                        code = input("Enter the code you received: ")
+                        await self._sign_in(self.phone_number, code, phone_code_hash, client)
                     is_authd = await client.is_user_authorized()
                 await client.disconnect()
                     
                 if is_authd: 
-                    with self.session_lock:
-                        # Serialize a session for creating new clients
-                        self.session_string = StringSession.save(client.session)
-                        logging.info("Successfully authenticated.")
+                    self.save_session(client)
                     return True
                 else:
-                    logging.warning("Not authenticated. Please check your credentials.")
                     return False
             except Exception as e:
                 import traceback
