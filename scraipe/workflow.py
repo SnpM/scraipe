@@ -71,22 +71,20 @@ class Workflow:
         
         scrapes = {}
         # Update the scrape store
-        with tqdm(total=len(links_to_scrape), desc="Scraping", unit="link") as pbar:
-            try:
-                for url, result in self.scraper.scrape_multiple(links_to_scrape):
-                    scrapes[url] = result
-                    if url not in self.store:
-                        self.store[url] = self.StoreRecord(url)
-                    self.store[url].scrape_result = result
+        try:
+            for url, result in self.scraper.scrape_multiple(links_to_scrape):
+                scrapes[url] = result
+                if url not in self.store:
+                    self.store[url] = self.StoreRecord(url)
+                self.store[url].scrape_result = result
 
-                    # Sanity check: ensure content is not None when success is True
-                    if result.scrape_success and result.content is None:
-                        self.logger.info(f"Warning: Scrape result for {url} is successful but content is None.")
-                        self.store[url].scrape_result = ScrapeResult(link=url, scrape_success=False, scrape_error="Content is None.")
-                    pbar.update(1)
-                    yield result
-            except Exception as e:
-                self.logger.error(f"Error during scraping: {e}. Halting.")
+                # Sanity check: ensure content is not None when success is True
+                if result.scrape_success and result.content is None:
+                    self.logger.warning(f"Scrape result for {url} is successful but content is None.")
+                    self.store[url].scrape_result = ScrapeResult(link=url, scrape_success=False, scrape_error="Content is None.")
+                yield result
+        except Exception as e:
+            self.logger.error(f"Error during scraping: {e}. Halting.")
             
         # Print summary
         success_count = sum(1 for result in scrapes.values() if result.scrape_success)
@@ -102,7 +100,10 @@ class Workflow:
         Returns:
             List[ScrapeResult]: List of ScrapeResult objects for each link.
         """
-        results = list(self.scrape_generator(links, overwrite))
+        generator = self.scrape_generator(links, overwrite)
+        results = []
+        for result in tqdm(generator):
+            results.append(result)
         return results
     
     def get_scrapes(self) -> pd.DataFrame:
@@ -305,13 +306,13 @@ class Workflow:
         """
         # Get list of links to analyze
         links_with_content = []
+        links_to_analyze = []
         for record in self.store.values():
             if record.scrape_result is not None and record.scrape_result.scrape_success:
                 links_with_content.append(record.link)
-        
+                if overwrite or record.analysis_result is None:
+                    links_to_analyze.append(record.link)
                     
-        links_to_analyze = [link for link in links_with_content if self.store[link].analysis_result is None]
-            
         self.logger.info(f"Analyzing {len(links_to_analyze)}/{len(links_with_content)} new or retry links with content...")
         
         # Analyze the content
@@ -321,17 +322,14 @@ class Workflow:
         analyses = {}
         num_items = len(content_dict)
         # Use tqdm to show progress
-        with tqdm(total=num_items, desc="Analyzing", unit="item") as pbar:
-            try:
-                for link, result in self.analyzer.analyze_multiple(content_dict):
-                    self.store[link].analysis_result = result
-                    analyses[link] = result
-                    # update the progress bar
-                    pbar.update(1)
-                    yield result
-            except Exception as e:
-                self.logger.error(f"Error during analysis: {e}. Halting.")
-                    
+        try:
+            for link, result in self.analyzer.analyze_multiple(content_dict):
+                self.store[link].analysis_result = result
+                analyses[link] = result
+                yield result
+        except Exception as e:
+            self.logger.error(f"Error during analysis: {e}. Halting.")
+                
         # Print summary
         success_count = sum([1 for result in analyses.values() if result.analysis_success])
         self.logger.info(f"Successfully analyzed {success_count}/{len(content_dict)} links.")
@@ -344,7 +342,11 @@ class Workflow:
         Returns:
             List[AnalysisResult]: List of AnalysisResult objects for each link.
         """
-        results = list(self.analyze_generator(overwrite))
+        generator = self.analyze_generator(overwrite)
+        results = []
+        for result in tqdm(generator):
+            results.append(result)
+        return results
         return results
     
     
