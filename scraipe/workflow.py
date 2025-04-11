@@ -55,6 +55,9 @@ class Workflow:
             links (List[str]): List of URLs to scrape.
             overwrite (bool): If True, re-scrape links already present in the store.
         """
+        assert isinstance(self.scraper, IScraper), "Scraper must be an instance of IScraper"
+        assert isinstance(links, list), "Links must be a list of strings"
+        
         # Remove duplicates
         links = list(set(links))
         
@@ -304,6 +307,9 @@ class Workflow:
         Args:
             overwrite (bool): (Currently unused) Reserved for future re-analysis capabilities.
         """
+        assert isinstance(self.analyzer, IAnalyzer), "Analyzer must be an instance of IAnalyzer"
+        assert isinstance(self.store, dict), "Store must be a dictionary"
+        
         # Get list of links to analyze
         links_with_content = []
         links_to_analyze = []
@@ -321,7 +327,6 @@ class Workflow:
         # update the store
         analyses = {}
         num_items = len(content_dict)
-        # Use tqdm to show progress
         try:
             for link, result in self.analyzer.analyze_multiple(content_dict):
                 self.store[link].analysis_result = result

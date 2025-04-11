@@ -15,6 +15,18 @@ import telethon
 
 import logging
 from sqlite3 import OperationalError
+import asyncio
+import time
+import qrcode
+
+from enum import Enum
+class AuthPhase(Enum):
+    NOT_STARTED = 0
+    AUTHENTICATED = 1
+    FAILED = -1
+    AUTH_CODE_SENT = -2
+    NEED_PASSWORD = -3
+    MONITORING_QR = -4
 
 class TelegramMessageScraper(IAsyncScraper):
     """
@@ -26,11 +38,11 @@ class TelegramMessageScraper(IAsyncScraper):
         phone_number (str): The phone number associated with the Telegram account.
 
     """
-    def is_authenticated(self) -> bool:
-        return self.session_string is not None
     DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
 
-    def __init__(self, api_id: str, api_hash: str, phone_number: str, session_name:str = None, password=None, sync_auth: bool = True):
+
+    qr_login:telethon.custom.QRLogin
+    def __init__(self, api_id: str, api_hash: str, phone_number: str, session_name:str = None, password=None, sync_auth: bool = True, use_qr_login: bool = False):
         """
         Initialize the TelegramMessageScraper with necessary connection parameters.
 
@@ -46,11 +58,13 @@ class TelegramMessageScraper(IAsyncScraper):
         self.api_hash = api_hash
         self.phone_number = phone_number
         self.session_lock = Lock()
-        self.phone_code_hash = None
+        self.login_token = None
+        self.qr_login = None
         self.password = password
+        self.use_qr_login = use_qr_login
         
         logging.info(f"Initializing the Telegram session...")
-        authd = self.authenticate(sync_auth)
+        authd = self.authenticate(sync_auth=sync_auth, use_qrcode=use_qr_login)
         if sync_auth and not authd:
             raise RuntimeError("Failed to authenticate the Telegram session. Please check your credentials.")
     
@@ -58,7 +72,6 @@ class TelegramMessageScraper(IAsyncScraper):
         with self.session_lock:
             # Serialize a session for creating new clients
             self.session_string = StringSession.save(client.session)
-    
     
     def try_get_session_client(self) -> TelegramClient:
         try:
@@ -68,87 +81,155 @@ class TelegramMessageScraper(IAsyncScraper):
             client = TelegramClient(StringSession(), api_id=self.api_id, api_hash=self.api_hash)
         return client
     
-    async def _sign_in(self, code: str, client:TelegramClient, phone_number: str, phone_code_hash: str = None, password: str = None):
-        password = None if self.password == "" else self.password
-        phone_code_hash = phone_code_hash if phone_code_hash is not None else self.phone_code_hash
+    def is_authenticated(self) -> bool:
+        return self.session_string is not None
+    async def _monitor_qr_login(self,
+        qr_login: telethon.custom.QRLogin, client: TelegramClient) -> AuthPhase:
+        # ASsume client is already connected to generate the QR code
+        assert qr_login is not None
+        assert client is not None
+        if not await client.is_user_authorized():
+
+            # wait until qr_login expires
+            expire_time = qr_login.expires
+            timeout = expire_time.timestamp() - time.time()
+            r = await qr_login.wait(timeout=timeout)
+            
+            if r:
+                logging.info("Successfully authenticated with QR code.")
+                self.save_session(client)
+                return AuthPhase.AUTHENTICATED
+            else:
+                logging.warning("QR code authentication failed.")
+                return AuthPhase.FAILED
+        else:
+            return AuthPhase.AUTHENTICATED
+            
+    
+    async def _sign_in_with_code(self,
+        code: str, client:TelegramClient, phone_number: str,
+        login_token: str = None, password: str = None) -> AuthPhase:
         
-        if phone_code_hash is None:
-            raise RuntimeError("phone_code_hash is None. Please call authenticate() first.")
+        password = None if self.password == "" else self.password
+        login_token = login_token if login_token else self.login_token
+        
+        if login_token is None:
+            raise RuntimeError("login_token is None. Please call authenticate() first.")
                 
         if client is None:
             client = self.try_get_session_client()
             
         await client.connect()
         if not await client.is_user_authorized():
+            is_authed = False
             try:
-                await client.sign_in(phone=phone_number, code=code, phone_code_hash=phone_code_hash, password=password)
+                sign_in_result = await client.sign_in(phone=phone_number, code=code, phone_code_hash=login_token, password=password)
+                is_authd = await client.is_user_authorized()
             except telethon.errors.SessionPasswordNeededError as e:
                 if password is None:
-                    logging.warning("Two-factor authentication is enabled. Please configure password.")                
-            
-            if await client.is_user_authorized():
+                    logging.warning("Two-factor authentication is enabled. Please configure password.")    
+                    return AuthPhase.NEED_PASSWORD
+                assert False         
+            finally:
+                client.disconnect()
+
+            if is_authd:
                 self.save_session(client)
                 logging.info("Successfully authenticated.")
+                return AuthPhase.AUTHENTICATED
             else:
                 logging.warning("Failed to authenticate. Please check your credentials.")
+                return AuthPhase.FAILED
                 
-            await client.disconnect()
         else:
             logging.info("Already authenticated. No need to sign in.")
+            return AuthPhase.AUTHENTICATED
     
-    def sign_in(self, code: str, client:TelegramClient=None):
+    def sign_in(self, code: str = None, client:TelegramClient=None) -> AuthPhase:
         """
-        Sign in to the Telegram account using the provided phone number, code, and password.
+        Sign in to the Telegram account using the provided auth code.
 
         Parameters:
             phone_number (str): The phone number associated with the account.
             code (str): The verification code sent to the phone number.
-            phone_code_hash (str): The hash of the verification code.
-            password (str): The password for two-factor authentication, if enabled.
 
         Raises:
             telethon.errors.SessionPasswordNeededError: If two-factor authentication is enabled and no password is provided.
         """
-        assert self.phone_code_hash is not None, "phone_code_hash is None. Please call authenticate() first."
-        AsyncManager.get_executor().run(self._sign_in(code, client, self.phone_number, self.phone_code_hash, self.password))
-        
-    def authenticate(self, sync_auth = True) -> bool:
+        assert self.login_token is not None, "login_token is None. Please call authenticate() first."
+        return AsyncManager.get_executor().run(self._sign_in_with_code(code, client, self.phone_number, self.login_token, self.password))
+    
+    def get_qr_url(self) -> str:
+        assert self.use_qr_login, "QR code login is not enabled. Please set use_qr_login=True in the constructor."
+        assert self.qr_login is not None, "qr_login is None. Please call authenticate() first."
+        return self.qr_login.url
+    
+    def authenticate(self, sync_auth = True, use_qrcode = False) -> AuthPhase:
         """
         Authenticate the Telegram session and return whether the authentication was successful.
+        
+        Returns:
+            
         """
-        async def _authenticate():
+        async def _authenticate() -> AuthPhase:
+            self.login_token = None
+            is_authd = False
+
             try:
                 client = self.try_get_session_client()
-                is_authd = False
                 
                 await client.connect()
                 if await client.is_user_authorized():
                     logging.info("Already authenticated. No need to authenticate again.")
                     is_authd = True
                 else:
-                    sent = await client.send_code_request(phone=self.phone_number)
-                    phone_code_hash = sent.phone_code_hash
-                    self.phone_code_hash = phone_code_hash
+                    if use_qrcode:
+                        # Use QR code authentication
+                        logging.info("Using QR code authentication.")
+                        self.qr_login = await client.qr_login()
+                    
+                        if sync_auth:
+                            # Direct user to scan the QR code online
+                            url = self.qr_login.url
+                            qr = qrcode.QRCode()
+                            qr.add_data(url)
+                            qr.make(fit=True)
+                            print("Please scan the QR code from the Telegram app:")
+                            qr.print_ascii()
+                            result = await self._monitor_qr_login(self.qr_login, client)
+                            is_authd = result == AuthPhase.AUTHENTICATED
+                        else:
+                            logging.info("Starting QR code authentication monitoring.")
+                            asyncio.create_task(self._monitor_qr_login(self.qr_login, client))
+                            return AuthPhase.MONITORING_QR
+                    else:
+                        sent = await client.send_code_request(phone=self.phone_number)
+                        login_token = sent.phone_code_hash
+                        self.login_token = login_token
+                        print("Sent code request", login_token, sent)
 
-                    if sync_auth:
-                        # get input from user and sign in immediately
-                        code = input("Enter the code you received: ")
-                        await self._sign_in(self.phone_number, code, phone_code_hash, client)
+                        if sync_auth:
+                            # get input from user and sign in immediately
+                            code = input("Enter the code you received: ")
+                            await self._sign_in_with_code(self.phone_number, code, login_token, client)
                     is_authd = await client.is_user_authorized()
                 await client.disconnect()
-                    
-                if is_authd: 
-                    self.save_session(client)
-                    return True
-                else:
-                    return False
             except Exception as e:
                 import traceback
+                traceback.print_exc()
                 logging.error(f"Failed to authenticate due to exception: {e}")
-                return False
+                return AuthPhase.FAILED
             else:
-                return True
+                if is_authd: 
+                    self.save_session(client)
+                    return AuthPhase.AUTHENTICATED
+                else:
+                    if self.login_token:
+                        return AuthPhase.AUTH_CODE_SENT
+                    else:
+                        return AuthPhase.FAILED
         return AsyncManager._executor.run(_authenticate())
+        
         
     def get_expected_link_format(self):
         # regex for telegram message links

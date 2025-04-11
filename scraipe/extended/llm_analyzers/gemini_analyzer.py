@@ -14,7 +14,7 @@ class GeminiAnalyzer(LlmAnalyzerBase):
         pydantic_schema: Type[BaseModel] = None,
         model: str = "gemini-2.0-flash",
         max_content_size: int = 10000,
-        max_workers: int = 3):
+        max_workers: int = 1):
         """Initializes the GeminiAnalyzer instance.
         
         Args:
@@ -23,7 +23,7 @@ class GeminiAnalyzer(LlmAnalyzerBase):
             pydantic_schema (Type[BaseModel], optional): The pydantic schema to be used for validating the response.
             model (str, optional): The model to be used for the Gemini API. Defaults to "gemini-2.0-flash".
             max_content_size (int, optional): The maximum size of the content to be analyzed. Defaults to 10000 characters.
-            max_workers (int, optional): The maximum number of workers to be used for the analysis. Defaults to 3.
+            max_workers (int, optional): The maximum number of workers to be used for the analysis. Defaults to 1 due to aggressive rate limiting.
         """
         super().__init__(
             instruction=instruction, pydantic_schema=pydantic_schema,
@@ -45,7 +45,10 @@ class GeminiAnalyzer(LlmAnalyzerBase):
             AssertionError: If the model is not found in the Gemini API.
         """
         client = test_client or Client(api_key=api_key)
+        list_results = client.models.list()
         model_instance = client.models.get(model=model)
+        
+        assert list_results is not None, f"Model {model} not found in Gemini API. Please check your API key and model name."
         assert model_instance is not None, f"Model {model} not found in Gemini API. Please check your API key and model name."
     
     async def query_llm(self, content: str, instruction: str) -> str:

@@ -13,7 +13,7 @@ TEST_URL = "https://t.me/TelegramTips/515"
 def live_scraper():
     # Load telethon credentials from the environment
     import os
-    session_name = os.environ.get("TELEGRAM_NAME")
+    session_name = "telegram_tests"
     api_id = os.environ.get("TELEGRAM_API_ID")
     api_hash = os.environ.get("TELEGRAM_API_HASH")
     phone_number = os.environ.get("TELEGRAM_PHONE_NUMBER")
@@ -100,7 +100,61 @@ def test_mock_scrape_nonexistent_message(mock_scraper):
     assert result.scrape_success == False
     assert result.content is None
     
+def skip_if_no_capture(request):
+    import sys, _io
+    capture_option = request.config.option.capture
+    if capture_option != "no":
+        pytest.skip("The -s flag is not set. Test requires interaction.")
 
+@pytest.mark.skipif(os.environ.get("QR") is None, reason="QR is not set")    
+def test_qrcode_login(request):
+    skip_if_no_capture(request)
+        
+    # Load telethon credentials from the environment
+    api_id = os.environ.get("TELEGRAM_API_ID")
+    api_hash = os.environ.get("TELEGRAM_API_HASH")
+    phone_number = os.environ.get("TELEGRAM_PHONE_NUMBER")
+    if not all([api_id, api_hash, phone_number]):
+        pytest.skip("Live scraper credentials are not set in the environment.")
+        
+    scraper = TelegramMessageScraper(api_id, api_hash, phone_number, session_name=None, use_qr_login=True)
+    scrape_result = scraper.scrape(TEST_URL)
+    assert scrape_result.scrape_success
+    
+@pytest.mark.asyncio
+@pytest.mark.skipif(os.environ.get("QR") is None, reason="QR is not set")
+async def test_qrcode_login_async(request):
+    skip_if_no_capture(request)
+        
+    # Load telethon credentials from the environment
+    api_id = os.environ.get("TELEGRAM_API_ID")
+    api_hash = os.environ.get("TELEGRAM_API_HASH")
+    phone_number = os.environ.get("TELEGRAM_PHONE_NUMBER")
+    if not all([api_id, api_hash, phone_number]):
+        pytest.skip("Live scraper credentials are not set in the environment.")
+
+    scraper = TelegramMessageScraper(api_id, api_hash, phone_number, session_name=None, use_qr_login=True, sync_auth=False)
+    url = scraper.get_qr_url()
+    import qrcode
+    qr = qrcode.QRCode()
+    qr.add_data(url)
+    qr.make(fit=True)
+    print("Scan from Telegram app for the test:")
+    qr.print_ascii()
+    
+    import asyncio
+    acc = 0
+    while not scraper.is_authenticated():
+        POLL_INTERVAL = .1
+        await asyncio.sleep(POLL_INTERVAL)
+        acc += POLL_INTERVAL
+        if acc > 15:
+            raise TimeoutError("QR code login timed out.")
+    
+    scrape_result = scraper.scrape(TEST_URL)
+    assert scrape_result.scrape_success
+    
+    
 # @pytest.mark.asyncio
 # async def test_telethon_client():
 #     from telethon import TelegramClient
@@ -111,7 +165,7 @@ def test_mock_scrape_nonexistent_message(mock_scraper):
 #     phone_number = os.environ.get("TELEGRAM_PHONE_NUMBER")
 #     if not all([name, api_id, api_hash, phone_number]):
 #         pytest.skip("Live scraper credentials are not set in the environment.")
-    
+
 #     session = StringSession()
 #     client = TelegramClient(session, api_id=int(api_id), api_hash=api_hash)
 #     await client.connect()
