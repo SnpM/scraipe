@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "scraipe"
-version = "0.1.41"
+version = "0.1.42"
 description = "AI web scraping workflow."
 readme = "README.md"
 license = "MIT"

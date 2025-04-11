@@ -7,7 +7,7 @@ Dependencies for this package can be installed using `pip install scraipe[extend
 _AVAILABLE = False
 try:
     # Validate extemded dependencies from pyproject.toml:
-    for pkg in ["telethon", "tgcrypto", "trafilatura"]:
+    for pkg in ["telethon", "trafilatura"]:
         __import__(pkg)
     _AVAILABLE = True
 except ImportError:
