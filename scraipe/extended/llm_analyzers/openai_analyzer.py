@@ -1,4 +1,4 @@
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, OpenAI
 from pydantic import BaseModel
 from typing import Type
 from scraipe.extended.llm_analyzers.llm_analyzer_base import LlmAnalyzerBase
@@ -34,6 +34,14 @@ class OpenAiAnalyzer(LlmAnalyzerBase):
         self.api_key = api_key
         self.client = AsyncOpenAI(api_key=api_key, organization=organization)
         self.model = model
+        
+        # Connect to OpenAi synchronously to ensure the API key and model are valid
+        self.validate(api_key=api_key, organization=organization, model=model)
+        
+    def validate(self, api_key: str, organization: str, model: str) -> None:
+        test_client = OpenAI(api_key=api_key, organization=organization)
+        model = test_client.models.retrieve(model=model)
+        assert model is not None, f"Model {model} not found in OpenAI API. Please check your API key and model name."
     
     async def query_llm(self, content: str, instruction: str) -> str:
         """Asynchronously queries the OpenAI API using the provided content and instruction.

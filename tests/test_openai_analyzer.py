@@ -15,14 +15,15 @@ TEST_CONTENT = "This Summer, I vacationed in Rome!"
 
 @pytest.fixture
 def analyzer():
-    return OpenAiAnalyzer(
-        api_key="test_api_key",
-        organization="",
-        instruction=TEST_INSTRUCTION,
-        pydantic_schema=MockSchema,
-        model="gpt-4o-mini"
-    )
-    
+    with patch(f"{TARGET_MODULE}.OpenAiAnalyzer.validate", return_value=None):
+        return OpenAiAnalyzer(
+            api_key="test_api_key",
+            organization="",
+            instruction=TEST_INSTRUCTION,
+            pydantic_schema=MockSchema,
+            model="gpt-4o-mini"
+        )
+
 @pytest.fixture
 def live_analyzer():
     # Load the OpenAI API key from the environment
@@ -30,13 +31,14 @@ def live_analyzer():
     api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
         return None
-    return OpenAiAnalyzer(
-        api_key=api_key,
-        organization="",
-        instruction=TEST_INSTRUCTION,
-        pydantic_schema=MockSchema,
-        model="gpt-4o-mini"
-    )
+    with patch(f"{TARGET_MODULE}.OpenAiAnalyzer.validate", return_value=None):
+        return OpenAiAnalyzer(
+            api_key=api_key,
+            organization="",
+            instruction=TEST_INSTRUCTION,
+            pydantic_schema=MockSchema,
+            model="gpt-4o-mini"
+        )
     
 @pytest.mark.asyncio
 async def test_query_live(live_analyzer):

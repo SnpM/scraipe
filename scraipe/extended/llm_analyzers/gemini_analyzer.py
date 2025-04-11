@@ -32,6 +32,21 @@ class GeminiAnalyzer(LlmAnalyzerBase):
         self.model = model
         self.client = Client(api_key=api_key)
         self.api_key = api_key
+        
+    def validate(self, api_key: str, model: str, test_client: Client = None) -> None:
+        """Validates the API key and model by attempting to retrieve the model from the Gemini API.
+        
+        Args:
+            api_key (str): The API key for Gemini.
+            model (str): The model to be used for the Gemini API.
+            test_client (Client, optional): A test client instance for mocking. Defaults to None.
+        
+        Raises:
+            AssertionError: If the model is not found in the Gemini API.
+        """
+        client = test_client or Client(api_key=api_key)
+        model_instance = client.models.get(model=model)
+        assert model_instance is not None, f"Model {model} not found in Gemini API. Please check your API key and model name."
     
     async def query_llm(self, content: str, instruction: str) -> str:
         """Asynchronously queries the Gemini API with the given content using the configured system instruction.

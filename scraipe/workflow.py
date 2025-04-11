@@ -1,4 +1,4 @@
-from typing import final, List, Dict
+from typing import final, List, Dict, Generator
 from scraipe.classes import IScraper, IAnalyzer, ScrapeResult, AnalysisResult
 import pandas as pd
 from pydantic import BaseModel, ValidationError
@@ -44,8 +44,9 @@ class Workflow:
         self.analyzer = analyzer
         self.store = {}
         self.logger = logger if logger else logging.getLogger(__name__)
+    
         
-    def scrape(self, links:List[str], overwrite:bool=False):
+    def scrape_generator(self, links:List[str], overwrite:bool=False) -> Generator[ScrapeResult, None, None]:
         """Scrape content from the provided links.
         
         Removes duplicate links and filters out those already scraped (unless 'overwrite' is True).
@@ -83,12 +84,26 @@ class Workflow:
                         self.logger.info(f"Warning: Scrape result for {url} is successful but content is None.")
                         self.store[url].scrape_result = ScrapeResult(link=url, scrape_success=False, scrape_error="Content is None.")
                     pbar.update(1)
+                    yield result
             except Exception as e:
                 self.logger.error(f"Error during scraping: {e}. Halting.")
             
         # Print summary
         success_count = sum(1 for result in scrapes.values() if result.scrape_success)
         self.logger.info(f"Successfully scraped {success_count}/{len(links_to_scrape)} links.")
+    
+    def scrape(self, links:List[str], overwrite:bool=False) -> List[ScrapeResult]:
+        """Scrape content from the provided links and return a list of ScrapeResult objects.
+        
+        Args:
+            links (List[str]): List of URLs to scrape.
+            overwrite (bool): If True, re-scrape links already present in the store.
+            
+        Returns:
+            List[ScrapeResult]: List of ScrapeResult objects for each link.
+        """
+        results = list(self.scrape_generator(links, overwrite))
+        return results
     
     def get_scrapes(self) -> pd.DataFrame:
         """Return a DataFrame copy of the stored scrape results."""
@@ -282,7 +297,7 @@ class Workflow:
         self.store = {}
         self.logger.info("Flushed all records from the store.")
     
-    def analyze(self, overwrite:bool=False):
+    def analyze_generator(self, overwrite:bool=False) -> Generator[AnalysisResult, None, None]:
         """Analyze content for links that have been successfully scraped but not yet analyzed.
         
         Args:
@@ -313,12 +328,26 @@ class Workflow:
                     analyses[link] = result
                     # update the progress bar
                     pbar.update(1)
+                    yield result
             except Exception as e:
                 self.logger.error(f"Error during analysis: {e}. Halting.")
                     
         # Print summary
         success_count = sum([1 for result in analyses.values() if result.analysis_success])
         self.logger.info(f"Successfully analyzed {success_count}/{len(content_dict)} links.")
+    def analyze(self, overwrite:bool=False) -> List[AnalysisResult]:
+        """Analyze content for links that have been successfully scraped but not yet analyzed.
+        
+        Args:
+            overwrite (bool): (Currently unused) Reserved for future re-analysis capabilities.
+            
+        Returns:
+            List[AnalysisResult]: List of AnalysisResult objects for each link.
+        """
+        results = list(self.analyze_generator(overwrite))
+        return results
+    
+    
     
     def get_analyses(self) -> pd.DataFrame:
         """Return a DataFrame copy of the stored analysis results."""

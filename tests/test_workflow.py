@@ -20,7 +20,7 @@ def workflow():
     return Workflow(scraper, analyzer)
 
 class TestScrape:
-    def test_scrape(self, workflow):
+    def test_scrape(self, workflow:Workflow):
         links = ["http://example.com/valid/1", "http://example.com/valid/2"]
         workflow.scrape(links)
         assert len(workflow.store) == 2

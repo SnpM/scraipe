@@ -87,4 +87,12 @@ async def test_analyze_schema_validation_failure(analyzer):
         result = await analyzer.async_analyze(TEST_CONTENT)
         assert not result.analysis_success
         assert "schema" in result.analysis_error
-# ...existing code...
+
+@pytest.mark.asyncio
+async def test_validate_method(analyzer):
+    with patch("scraipe.extended.llm_analyzers.gemini_analyzer.Client") as MockClient:
+        mock_client_instance = MockClient.return_value
+        mock_client_instance.models.get.return_value = "mock_model_instance"
+        
+        analyzer.validate(api_key="test_api_key", model="gemini-2.0-flash", test_client=mock_client_instance)
+        mock_client_instance.models.get.assert_called_once_with(model="gemini-2.0-flash")
