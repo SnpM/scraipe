@@ -11,7 +11,7 @@ class GeminiAnalyzer(LlmAnalyzerBase):
     def __init__(self,
         api_key: str,
         instruction: str,
-        pydantic_schema: Type[BaseModel],
+        pydantic_schema: Type[BaseModel] = None,
         model: str = "gemini-2.0-flash",
         max_content_size: int = 10000,
         max_workers: int = 3):
