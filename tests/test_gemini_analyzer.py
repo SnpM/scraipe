@@ -5,6 +5,7 @@ import pydantic
 from unittest.mock import patch, AsyncMock
 
 from scraipe.extended.llm_analyzers.gemini_analyzer import GeminiAnalyzer
+TARGET_MODULE = GeminiAnalyzer.__module__
 
 # Dummy response to simulate genai.GenerativeModel.generate_content return value
 class DummyResponse:
@@ -19,12 +20,13 @@ TEST_CONTENT = "Last summer, I visited Paris!"
 
 @pytest.fixture
 def analyzer():
-    return GeminiAnalyzer(
-        api_key="test_api_key",
-        instruction=TEST_INSTRUCTION,
-        pydantic_schema=MockSchema,
-        model="gemini-2.0-flash"
-    )
+    with patch(f"{TARGET_MODULE}.GeminiAnalyzer.validate", return_value=None):
+        return GeminiAnalyzer(
+            api_key="test_api_key",
+            instruction=TEST_INSTRUCTION,
+            pydantic_schema=MockSchema,
+            model="gemini-2.0-flash"
+        )
 
 @pytest.fixture
 def live_analyzer():
@@ -94,5 +96,5 @@ async def test_validate_method(analyzer):
         mock_client_instance = MockClient.return_value
         mock_client_instance.models.get.return_value = "mock_model_instance"
         
-        analyzer.validate(api_key="test_api_key", model="gemini-2.0-flash", test_client=mock_client_instance)
+        analyzer.validate(test_client=mock_client_instance)
         mock_client_instance.models.get.assert_called_once_with(model="gemini-2.0-flash")

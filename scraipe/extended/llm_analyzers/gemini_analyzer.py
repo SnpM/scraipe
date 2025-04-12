@@ -1,9 +1,12 @@
 from typing import Type
+import google.genai
+import google.genai.errors
 from pydantic import BaseModel
 from scraipe.extended.llm_analyzers.llm_analyzer_base import LlmAnalyzerBase
 
 from google.genai import Client
 from google.genai.types import GenerateContentConfig
+import google
 
 class GeminiAnalyzer(LlmAnalyzerBase):
     """An LlmAnalyzer that uses the Gemini API."""
@@ -33,23 +36,25 @@ class GeminiAnalyzer(LlmAnalyzerBase):
         self.client = Client(api_key=api_key)
         self.api_key = api_key
         
-    def validate(self, api_key: str, model: str, test_client: Client = None) -> None:
+        self.validate()
+        
+    def validate(self, test_client: Client = None) -> None:
         """Validates the API key and model by attempting to retrieve the model from the Gemini API.
         
         Args:
-            api_key (str): The API key for Gemini.
-            model (str): The model to be used for the Gemini API.
             test_client (Client, optional): A test client instance for mocking. Defaults to None.
         
         Raises:
             AssertionError: If the model is not found in the Gemini API.
         """
-        client = test_client or Client(api_key=api_key)
-        list_results = client.models.list()
-        model_instance = client.models.get(model=model)
+        client = test_client or self.client
+        try:
+            print(client._api_client.api_key)
+            model_instance = client.models.get(model=self.model)
+        except google.genai.errors.ClientError as e:
+            raise Exception(f"Check your API key.") from e
         
-        assert list_results is not None, f"Model {model} not found in Gemini API. Please check your API key and model name."
-        assert model_instance is not None, f"Model {model} not found in Gemini API. Please check your API key and model name."
+        assert model_instance is not None, f"Model {self.model} not found in Gemini API. Please check your API key and model name."
     
     async def query_llm(self, content: str, instruction: str) -> str:
         """Asynchronously queries the Gemini API with the given content using the configured system instruction.
