@@ -185,5 +185,8 @@ secrets.env
 
 *Cargo.lock
 
+.session.txt
+*.session.txt.lock
+
 # Prefix to ignore files
 ~.*

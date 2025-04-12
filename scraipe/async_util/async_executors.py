@@ -67,6 +67,9 @@ class IAsyncExecutor:
         assert isinstance(future, FutureLike), f"Expected {FutureLike}, got {type(future)}"
         awaitable = get_awaitable(future)
         return await awaitable
+    
+    async def wait_for(self, future: FutureLike) -> Any:
+        return await get_awaitable(future)
             
     async def async_run_multiple(self, tasks: List[Awaitable[Any]], max_workers:int=10) -> AsyncGenerator[Any, None]:
         """
