@@ -45,7 +45,8 @@ def mock_scraper():
             yield scraper
             scraper.disconnect()
 
-def test_live_scrape_valid_url(live_scraper):
+def test_live_scrape_valid_url(request,live_scraper):
+    skip_if_no_capture(request)
     if live_scraper is None:
         pytest.skip("Live scraper credentials are not set in the environment.")
     url = TEST_URL

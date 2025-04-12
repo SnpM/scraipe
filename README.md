@@ -65,5 +65,7 @@ pip install scraipe
 
 Contributions are welcome. Please open an issue or submit a pull request for improvements.
 
+Run `poetry install --with dev,docs --extras extended` to install all dependences for the project.
+
 ## Maintainer
 This project is maintained by [nibs](https://github.com/SnpM).
