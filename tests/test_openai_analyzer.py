@@ -31,14 +31,13 @@ def live_analyzer():
     api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
         return None
-    with patch(f"{TARGET_MODULE}.OpenAiAnalyzer.validate", return_value=None):
-        return OpenAiAnalyzer(
-            api_key=api_key,
-            organization="",
-            instruction=TEST_INSTRUCTION,
-            pydantic_schema=MockSchema,
-            model="gpt-4o-mini"
-        )
+    return OpenAiAnalyzer(
+        api_key=api_key,
+        organization="",
+        instruction=TEST_INSTRUCTION,
+        pydantic_schema=MockSchema,
+        model="gpt-4o-mini"
+    )
     
 @pytest.mark.asyncio
 async def test_query_live(live_analyzer):

@@ -37,11 +37,11 @@ class OpenAiAnalyzer(LlmAnalyzerBase):
         self.model = model
         
         # Connect to OpenAi synchronously to ensure the API key and model are valid
-        self.validate(api_key=api_key, organization=organization, model=model)
+        self.validate()
         
     def validate(self) -> None:
         test_client = OpenAI(api_key=self.api_key, organization=self.organization)
-        model = test_client.models.retrieve(model=model)
+        model = test_client.models.retrieve(model=self.model)
         assert model is not None, f"Model {model} not found in OpenAI API. Please check your API key and model name."
     
     async def query_llm(self, content: str, instruction: str) -> str:
