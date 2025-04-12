@@ -18,7 +18,7 @@ from sqlite3 import OperationalError
 import asyncio
 import time
 import qrcode
-
+import threading
 from enum import Enum
 class AuthPhase(Enum):
     NOT_STARTED = 0
@@ -38,11 +38,10 @@ class TelegramMessageScraper(IAsyncScraper):
         phone_number (str): The phone number associated with the Telegram account.
 
     """
-    DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
-
 
     qr_login:telethon.custom.QRLogin
-    def __init__(self, api_id: str, api_hash: str, phone_number: str, session_name:str = None, password=None, sync_auth: bool = True, use_qr_login: bool = False):
+    
+    def __init__(self, api_id: str, api_hash: str, phone_number: str = None, session_name:str = None, password=None, sync_auth: bool = True, use_qr_login: bool = False):
         """
         Initialize the TelegramMessageScraper with necessary connection parameters.
 
@@ -62,6 +61,10 @@ class TelegramMessageScraper(IAsyncScraper):
         self.qr_login = None
         self.password = password
         self.use_qr_login = use_qr_login
+        self.qr_login_listeners = None
+        
+        if not self.use_qr_login:
+            assert self.phone_number is not None, "phone_number is None. Please provide a phone number for authentication."
         
         logging.info(f"Initializing the Telegram session...")
         authd = self.authenticate(sync_auth=sync_auth, use_qrcode=use_qr_login)
@@ -83,8 +86,18 @@ class TelegramMessageScraper(IAsyncScraper):
     
     def is_authenticated(self) -> bool:
         return self.session_string is not None
-    async def _monitor_qr_login(self,
+    
+    def is_monitoring_qr(self) -> bool:
+        return self._qr_login_lock.locked()
+    
+    _qr_login_lock:threading.Lock = threading.Lock()    
+    async def _qr_login_loop(self,
         qr_login: telethon.custom.QRLogin, client: TelegramClient) -> AuthPhase:
+        
+        acquired = self._qr_login_lock.acquire(blocking=False)
+        if not acquired:
+            raise RuntimeError("QR login loop is already running. Cannot start a new one.")
+    
         # ASsume client is already connected to generate the QR code
         assert qr_login is not None
         assert client is not None
@@ -93,18 +106,29 @@ class TelegramMessageScraper(IAsyncScraper):
             # wait until qr_login expires
             expire_time = qr_login.expires
             timeout = expire_time.timestamp() - time.time()
-            r = await qr_login.wait(timeout=timeout)
-            
-            if r:
-                logging.info("Successfully authenticated with QR code.")
-                self.save_session(client)
-                return AuthPhase.AUTHENTICATED
+            try:
+                r = await qr_login.wait(timeout=timeout)
+            except TimeoutError as e:
+                logging.warning("QR code login timed out.")
+                result = AuthPhase.FAILED
             else:
-                logging.warning("QR code authentication failed.")
-                return AuthPhase.FAILED
+                if r:
+                    logging.info("Successfully authenticated with QR code.")
+                    self.save_session(client)
+                    result = AuthPhase.AUTHENTICATED
+                else:
+                    logging.warning("QR code authentication failed.")
+                    result = AuthPhase.FAILED
         else:
-            return AuthPhase.AUTHENTICATED
+            result = AuthPhase.AUTHENTICATED
             
+        print ("calling callbacks...",self.is_authenticated())
+        for cb in self.qr_login_listeners:
+            cb(result)
+        self.qr_login = None
+        self.qr_login_listeners = None
+        self._qr_login_lock.release()
+        return result
     
     async def _sign_in_with_code(self,
         code: str, client:TelegramClient, phone_number: str,
@@ -164,6 +188,13 @@ class TelegramMessageScraper(IAsyncScraper):
         assert self.qr_login is not None, "qr_login is None. Please call authenticate() first."
         return self.qr_login.url
     
+    def subscribe_qr_login_listener(self, callback):
+        """
+        Subscribe a callback that receives AuthPhase updates
+        during the QR login process.
+        """
+        self.qr_login_listeners.append(callback)
+    
     def authenticate(self, sync_auth = True, use_qrcode = False) -> AuthPhase:
         """
         Authenticate the Telegram session and return whether the authentication was successful.
@@ -187,6 +218,8 @@ class TelegramMessageScraper(IAsyncScraper):
                         # Use QR code authentication
                         logging.info("Using QR code authentication.")
                         self.qr_login = await client.qr_login()
+                        # Clear listeners
+                        self.qr_login_listeners = []
                     
                         if sync_auth:
                             # Direct user to scan the QR code online
@@ -196,11 +229,11 @@ class TelegramMessageScraper(IAsyncScraper):
                             qr.make(fit=True)
                             print("Please scan the QR code from the Telegram app:")
                             qr.print_ascii()
-                            result = await self._monitor_qr_login(self.qr_login, client)
+                            result = await self._qr_login_loop(self.qr_login, client)
                             is_authd = result == AuthPhase.AUTHENTICATED
                         else:
                             logging.info("Starting QR code authentication monitoring.")
-                            asyncio.create_task(self._monitor_qr_login(self.qr_login, client))
+                            asyncio.create_task(self._qr_login_loop(self.qr_login, client))
                             return AuthPhase.MONITORING_QR
                     else:
                         sent = await client.send_code_request(phone=self.phone_number)
