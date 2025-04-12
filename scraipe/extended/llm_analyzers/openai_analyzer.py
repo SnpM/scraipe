@@ -32,14 +32,15 @@ class OpenAiAnalyzer(LlmAnalyzerBase):
             instruction=instruction, pydantic_schema=pydantic_schema,
             max_content_size=max_content_size, max_workers=max_workers)
         self.api_key = api_key
+        self.organization = organization
         self.client = AsyncOpenAI(api_key=api_key, organization=organization)
         self.model = model
         
         # Connect to OpenAi synchronously to ensure the API key and model are valid
         self.validate(api_key=api_key, organization=organization, model=model)
         
-    def validate(self, api_key: str, organization: str, model: str) -> None:
-        test_client = OpenAI(api_key=api_key, organization=organization)
+    def validate(self) -> None:
+        test_client = OpenAI(api_key=self.api_key, organization=self.organization)
         model = test_client.models.retrieve(model=model)
         assert model is not None, f"Model {model} not found in OpenAI API. Please check your API key and model name."
     
