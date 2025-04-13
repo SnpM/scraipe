@@ -41,10 +41,10 @@ class ScrapeResult(BaseModel):
     @model_validator(mode='after')
     def _validate(self):
         # Ensure content is present if scrape_success is True
-        if self.scrape_success and not self.content:
+        if self.scrape_success and self.content is None:
             raise ValueError("Content must be provided if scrape_success is True.")
         # Ensure error is present if scrape_success is False
-        if not self.scrape_success and not self.scrape_error:
+        if not self.scrape_success and self.scrape_error is None:
             raise ValueError("Error must be provided if scrape_success is False.")
         return self
     
