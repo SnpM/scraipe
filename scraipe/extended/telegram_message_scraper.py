@@ -608,22 +608,18 @@ class TelegramMessageScraper(IAsyncScraper):
                 try:
                     entity = await client.get_entity(chat_name)
                 except Exception as e:
-                    logging.error(f"Failed to get chat for {chat_name}")
                     return None, "Failed to get chat for {chat_name}"
                 if hasattr(entity, 'restricted') and entity.restricted:
-                    logging.error(f"Chat {chat_name} is restricted.")
                     return None, f"Chat {chat_name} is restricted."
                 
                 # get message
                 try:
                     message = await client.get_messages(entity,ids=message_id)
                 except Exception as e:
-                    logging.error(f"Failed to get message {message_id} from {chat_name}")
                     return None, f"Failed to get message {message_id} from {chat_name}"
                 
                 # Extract content
                 if message is None:
-                    logging.error(f"Message {message_id} from {chat_name} is None.")
                     return None, f"Message {message_id} from {chat_name} is None."
                 if message.message is not None:
                     content = message.message
