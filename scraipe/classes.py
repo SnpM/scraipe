@@ -33,7 +33,7 @@ class ScrapeResult(BaseModel):
         return self.scrape_error
     
     def __str__(self):
-        return f"ScrapeResult(link={self.link}, content={self.content}, success={self.scrape_success}, error={self.scrape_error})"
+        return f"ScrapeResult(link={self.link}, content={self.content}, success={self.scrape_success}, error={self.scrape_error}, metadata={self.metadata})"
     
     def __repr__(self):
         return str(self)
