@@ -90,7 +90,7 @@ def test_run_multiple(executor):
         return x * 2
 
     tasks = [async_task(i) for i in range(5)]
-    results = list(executor.run_multiple(tasks))
+    results = [result for result,err in executor.run_multiple(tasks)]
     assert sorted(results) == sorted([i * 2 for i in range(5)])
 
 @pytest.mark.asyncio
@@ -100,7 +100,7 @@ async def test_async_run_multiple(executor:IAsyncExecutor):
         return x * 2
     n = 10
     tasks = [async_task(i) for i in range(n)]
-    results = [result async for result in executor.async_run_multiple(tasks)]
+    results = [result async for result,err in executor.run_multiple_async(tasks)]
     assert sorted(results) == sorted([i * 2 for i in range(n)])
 
 @pytest.mark.asyncio

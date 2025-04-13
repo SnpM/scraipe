@@ -60,7 +60,11 @@ class IAsyncScraper(IScraper):
                 return link, await self.async_scrape(link)
             return task()
         tasks = [make_task(link) for link in links]
-        return AsyncManager.get_executor().run_multiple(tasks, self.max_workers)
+        for task_result,err in AsyncManager.get_executor().run_multiple(tasks, self.max_workers):
+            if err:
+                link,output = task_result
+                yield link, ScrapeResult.fail(link,err) 
+            yield task_result
             
 class IAsyncAnalyzer(IAnalyzer):
     """
@@ -119,4 +123,7 @@ class IAsyncAnalyzer(IAnalyzer):
                 return link, await self.async_analyze(content)
             return task()
         tasks = [make_task(link, content) for link, content in contents.items()]
-        return AsyncManager.get_executor().run_multiple(tasks, self.max_workers)
+        for output, error in AsyncManager.get_executor().run_multiple(tasks, self.max_workers):
+            if error:
+                yield AnalysisResult.fail(error)
+            yield output
