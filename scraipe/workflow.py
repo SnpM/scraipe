@@ -365,7 +365,7 @@ class Workflow:
             row = {"link": record.link}
             if record.analysis_result is not None:
                 row.update(record.analysis_result.model_dump())
-            rows.append(row)
+                rows.append(row)
         return pd.DataFrame(rows)
     
     def update_records(self, records:List[StoreRecord]):
