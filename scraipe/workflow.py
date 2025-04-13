@@ -84,7 +84,7 @@ class Workflow:
                 # Sanity check: ensure content is not None when success is True
                 if result.scrape_success and result.content is None:
                     self.logger.warning(f"Scrape result for {url} is successful but content is None.")
-                    self.store[url].scrape_result = ScrapeResult(link=url, scrape_success=False, scrape_error="Content is None.")
+                    self.store[url].scrape_result = ScrapeResult.fail(url, "Content is None")
                 yield result
         except Exception as e:
             self.logger.error(f"Error during scraping: {e}. Halting.")
