@@ -624,7 +624,7 @@ class TelegramMessageScraper(IAsyncScraper):
                 if message.message is not None:
                     content = message.message
                 else:
-                    raise RuntimeError(f"Message {message_id} from {chat_name} is None.")
+                    return None, f"Message {message_id} from {chat_name} is empty."
                 return content, None
 
     async def async_scrape(self, url: str) -> ScrapeResult:
