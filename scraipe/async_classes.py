@@ -2,15 +2,15 @@ from abc import abstractmethod
 from typing import Generator, Tuple
 from scraipe.classes import IScraper, ScrapeResult, IAnalyzer, AnalysisResult
 from scraipe.async_util import AsyncManager
-
+import logging
 class IAsyncScraper(IScraper):
     """
     Base class for asynchronous scrapers. Implements the IScraper interface.
     This class provides a synchronous wrapper around the asynchronous scraping method.
     Subclasses must implement the async_scrape() method.
     """
-    max_workers:int = 3
-    def __init__(self, max_workers: int=3):
+    max_workers:int = 4
+    def __init__(self, max_workers: int=4):
         """
         Initialize the IAsyncScraper with a maximum number of concurrent workers.
         
@@ -57,13 +57,16 @@ class IAsyncScraper(IScraper):
         """
         def make_task(link):
             async def task():
-                return link, await self.async_scrape(link)
+                try:
+                    return link, await self.async_scrape(link)
+                except Exception as e:
+                    return link, ScrapeResult.fail(link, str(e))
             return task()
         tasks = [make_task(link) for link in links]
         for task_result,err in AsyncManager.get_executor().run_multiple(tasks, self.max_workers):
             if err:
-                link,output = task_result
-                yield link, ScrapeResult.fail(link,err) 
+                logging.error(f"This is bad: {err}")
+                continue
             yield task_result
             
 class IAsyncAnalyzer(IAnalyzer):
@@ -72,8 +75,8 @@ class IAsyncAnalyzer(IAnalyzer):
     This class provides a synchronous wrapper around the asynchronous analysis method.
     Subclasses must implement the async_analyze() method.
     """
-    max_workers:int = 10
-    def __init__(self, max_workers: int = 10):
+    max_workers:int = 2
+    def __init__(self, max_workers: int = 2):
         """
         Initialize the IAsyncAnalyzer with a maximum number of concurrent workers.
         
@@ -120,10 +123,14 @@ class IAsyncAnalyzer(IAnalyzer):
         """
         def make_task(link, content):
             async def task():
-                return link, await self.async_analyze(content)
+                try:
+                    return link, await self.async_analyze(content)
+                except Exception as e:
+                    return link, AnalysisResult.fail(str(e))
             return task()
         tasks = [make_task(link, content) for link, content in contents.items()]
         for output, error in AsyncManager.get_executor().run_multiple(tasks, self.max_workers):
             if error:
-                yield AnalysisResult.fail(error)
+                logging.error(f"This is bad: {error}")
+                continue
             yield output
