@@ -38,6 +38,8 @@ class LoginType(Enum):
     AuthCode = 1
     QRCode = 2
     
+
+    
 class ILoginContext(ABC):
     
     # Attributes
@@ -478,10 +480,8 @@ class TelegramMessageScraper(IAsyncScraper):
                 session_string = self.load_session_file(self.session_name)
                 if session_string is None:
                     logging.info(f"Session {self.session_name} does not exist. Creating a new session.")
-            except:
+            except Exception as e:
                 logging.error(f"Failed to read session file for {self.session_name}: {e}")
-                #TODO: Recover from error
-                raise e
 
             # Parse the session string with StringSession
             if session_string is not None:
@@ -584,7 +584,8 @@ class TelegramMessageScraper(IAsyncScraper):
         # regex for telegram message links
         return "https://t.me/[^/]+/[0-9]+"
 
-    async def _get_telegram_content(self, chat_name: str, message_id: int):
+
+    async def _get_telegram_content(self, chat_name: str, message_id: int) -> tuple[str,str]:
         """
         Retrieve the content of a Telegram message asynchronously.
 
@@ -593,7 +594,7 @@ class TelegramMessageScraper(IAsyncScraper):
             message_id (int): The ID of the message to retrieve.
 
         Returns:
-            str: The text or caption of the Telegram message.
+            (str, str): A tuple containing the message content and an error message if any.
 
         Raises:
             Exception: If failing to retrieve the chat or message, or if the chat is restricted.
@@ -601,30 +602,34 @@ class TelegramMessageScraper(IAsyncScraper):
         client = self._authenticated_client()
         async with self.ClientConnection(client):
             if not await client.is_user_authorized():
-                raise Exception("Telagram session not auth'd. Please authenticate by calling authenticate().")        
+                return None, "Not authenticated."
             async with client:        
                 # Get chat
                 try:
                     entity = await client.get_entity(chat_name)
                 except Exception as e:
-                    raise Exception(f"Failed to get chat for {chat_name}") from e
+                    logging.error(f"Failed to get chat for {chat_name}")
+                    return None, "Failed to get chat for {chat_name}"
                 if hasattr(entity, 'restricted') and entity.restricted:
-                    raise Exception(f"Chat {chat_name} is restricted.")
+                    logging.error(f"Chat {chat_name} is restricted.")
+                    return None, f"Chat {chat_name} is restricted."
                 
                 # get message
                 try:
                     message = await client.get_messages(entity,ids=message_id)
                 except Exception as e:
-                    raise Exception(f"Failed to get message {message_id} from {chat_name}") from e
+                    logging.error(f"Failed to get message {message_id} from {chat_name}")
+                    return None, f"Failed to get message {message_id} from {chat_name}"
                 
                 # Extract content
                 if message is None:
-                    raise Exception(f"Message {message_id} from {chat_name} is None.")
+                    logging.error(f"Message {message_id} from {chat_name} is None.")
+                    return None, f"Message {message_id} from {chat_name} is None."
                 if message.message is not None:
                     content = message.message
                 else:
-                    raise Exception(f"Message {message_id} from {chat_name} is None.")
-                return content
+                    raise RuntimeError(f"Message {message_id} from {chat_name} is None.")
+                return content, None
 
     async def async_scrape(self, url: str) -> ScrapeResult:
         """
@@ -650,9 +655,10 @@ class TelegramMessageScraper(IAsyncScraper):
         except ValueError:
             error = f"Message ID {message_id} is not a valid integer."
             return ScrapeResult.fail(url, error)
-        try:
-            content = await self._get_telegram_content(username, message_id)
-            assert content is not None, f"Message {message_id} from {username} is None."
-        except Exception as e:
-            return ScrapeResult.fail(url, f"Failed to scrape due to exception: {e}")
+        
+        content,err = await self._get_telegram_content(username, message_id)
+        if err is not None:
+            assert content is None, "Content should be None if there is an error."
+            logging.error(f"Failed to scrape {url}: {err}")
+            return ScrapeResult.fail(url, f"{err}")
         return ScrapeResult.succeed(url, content)
