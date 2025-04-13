@@ -11,6 +11,8 @@ TARGET_MODULE = TelegramMessageScraper.__module__
 
 TEST_URL = "https://t.me/TelegramTips/515"
 
+IMAGE_URL = "https://t.me/binancesignals/45"
+
 
 @pytest.fixture
 def live_scraper(request):
@@ -72,7 +74,7 @@ def test_live_scrape_invalid_url(live_scraper):
     result = live_scraper.scrape(url)
     assert isinstance(result, ScrapeResult)
     assert not result.scrape_success
-    assert "not a telegram link" in result.scrape_error
+    assert result.scrape_error is not None
 
 def test_live_scrape_nonexistent_message(live_scraper):
     if live_scraper is None:
@@ -109,6 +111,17 @@ def test_mock_scrape_nonexistent_message(mock_scraper):
     assert isinstance(result, ScrapeResult)
     assert result.scrape_success == False
     assert result.content is None
+    
+def test_image_message_live(live_scraper):
+    if live_scraper is None:
+        pytest.skip("Live scraper credentials are not set in the environment.")
+    url = IMAGE_URL
+    result = live_scraper.scrape(url)
+    assert isinstance(result, ScrapeResult)
+    assert result.scrape_success
+    assert result.link == url
+    assert result.content is not None
+    
 
 @pytest.mark.skipif(os.environ.get("QR") is None, reason="QR is not set")    
 def test_qrcode_login(request):

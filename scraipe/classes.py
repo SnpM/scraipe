@@ -62,6 +62,8 @@ class ScrapeResult(BaseModel):
         """
         assert link is not None, "Link must be provided"
         assert content is not None, "Content must be provided for success"
+
+        
         return ScrapeResult(
             link=link,
             content=content,
@@ -121,10 +123,10 @@ class AnalysisResult(BaseModel):
     @model_validator(mode='after')
     def _validate(self):
         # Ensure output is present if analysis_success is True
-        if self.analysis_success and not self.output:
+        if self.analysis_success and self.output is None:
             raise ValueError("Output must be provided if analysis_success is True.")
         # Ensure error is present if analysis_success is False
-        if not self.analysis_success and not self.analysis_error:
+        if not self.analysis_success and self.analysis_error is None:
             raise ValueError("Error must be provided if analysis_success is False.")
         return self
     
