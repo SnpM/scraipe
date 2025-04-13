@@ -9,8 +9,8 @@ class IAsyncScraper(IScraper):
     This class provides a synchronous wrapper around the asynchronous scraping method.
     Subclasses must implement the async_scrape() method.
     """
-    max_workers:int = 10
-    def __init__(self, max_workers: int=10):
+    max_workers:int = 3
+    def __init__(self, max_workers: int=3):
         """
         Initialize the IAsyncScraper with a maximum number of concurrent workers.
         
