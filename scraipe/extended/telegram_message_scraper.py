@@ -640,7 +640,7 @@ class TelegramMessageScraper(IAsyncScraper):
         The method validates the URL, extracts the username and message ID, and retrieves the message content.
         """
         if not url.startswith("https://t.me/"):
-            return ScrapeResult(link=url, scrape_success=False, scrape_error=f"URL {url} is not a telegram link.")
+            return ScrapeResult.fail(url, f"URL {url} is not a telegram message link.")
         match = re.match(r"https://t.me/([^/]+)/(\d+)", url)
         if not match:
             error = f"Failed to extract username and message id from {url}"
