@@ -2,7 +2,7 @@ from typing import final, List, Dict, Generator
 from scraipe.classes import IScraper, IAnalyzer, ScrapeResult, AnalysisResult
 import pandas as pd
 from pydantic import BaseModel, ValidationError
-from tqdm import tqdm
+from tqdm.auto import tqdm
 import logging
 from logging import Logger
 from functools import singledispatchmethod
@@ -45,8 +45,7 @@ class Workflow:
         self.store = {}
         self.logger = logger if logger else logging.getLogger(__name__)
     
-        
-    def scrape_generator(self, links:List[str], overwrite:bool=False) -> Generator[ScrapeResult, None, None]:
+    def scrape_generator(self, links:List[str]) -> Generator[ScrapeResult, None, None]:
         """Scrape content from the provided links.
         
         Removes duplicate links and filters out those already scraped (unless 'overwrite' is True).
@@ -58,24 +57,11 @@ class Workflow:
         assert isinstance(self.scraper, IScraper), "Scraper must be an instance of IScraper"
         assert isinstance(links, list), "Links must be a list of strings"
         
-        # Remove duplicates
-        links = list(set(links))
-        
-        # Filter out the links that have already been scraped
-        if overwrite:
-            links_to_scrape = links
-        else:
-            links_to_scrape = []
-            for url in links:
-                if url not in self.store or self.store[url].scrape_result is None or self.store[url].scrape_result.scrape_success == False:
-                    # If the link is not in the store or the scrape result is None or failed, add it to the list
-                    links_to_scrape.append(url)
-        self.logger.info(f"Scraping {len(links_to_scrape)}/{len(links)} new or retry links...")
-        
+ 
         scrapes = {}
         # Update the scrape store
         try:
-            for url, result in self.scraper.scrape_multiple(links_to_scrape):
+            for url, result in self.scraper.scrape_multiple(links):
                 scrapes[url] = result
                 if url not in self.store:
                     self.store[url] = self.StoreRecord(url)
@@ -91,7 +77,7 @@ class Workflow:
             
         # Print summary
         success_count = sum(1 for result in scrapes.values() if result.scrape_success)
-        self.logger.info(f"Successfully scraped {success_count}/{len(links_to_scrape)} links.")
+        self.logger.info(f"Successfully scraped {success_count}/{len(links)} links.")
     
     def scrape(self, links:List[str], overwrite:bool=False) -> List[ScrapeResult]:
         """Scrape content from the provided links and return a list of ScrapeResult objects.
@@ -103,9 +89,17 @@ class Workflow:
         Returns:
             List[ScrapeResult]: List of ScrapeResult objects for each link.
         """
-        generator = self.scrape_generator(links, overwrite)
+        
+        # Remove duplicates
+        links_to_scrape = list(set(links))
+        
+        # Filter out the links that have already been succesfully scraped
+        if not overwrite:
+            links_to_scrape = [url for url in links if url not in self.store or self.store[url].scrape_result is None]
+        
+        generator = self.scrape_generator(links_to_scrape)
         results = []
-        for result in tqdm(generator):
+        for result in tqdm(generator, desc="Scraping", unit="link", total=len(links_to_scrape)):
             results.append(result)
         return results
     
@@ -301,7 +295,7 @@ class Workflow:
         self.store = {}
         self.logger.info("Flushed all records from the store.")
     
-    def analyze_generator(self, overwrite:bool=False) -> Generator[AnalysisResult, None, None]:
+    def analyze_generator(self, links:List[str]) -> Generator[AnalysisResult, None, None]:
         """Analyze content for links that have been successfully scraped but not yet analyzed.
         
         Args:
@@ -309,24 +303,25 @@ class Workflow:
         """
         assert isinstance(self.analyzer, IAnalyzer), "Analyzer must be an instance of IAnalyzer"
         assert isinstance(self.store, dict), "Store must be a dictionary"
+
+        content_dict = {}
+        for link in links:
+            if link not in self.store:
+                self.logger.warning(f"Link {link} not found in store. Skipping.")
+                continue
+            if self.store[link].scrape_result is None:
+                self.logger.warning(f"Scrape result for {link} is None. Skipping.")
+                continue
+            if self.store[link].scrape_result.scrape_success is False:
+                self.logger.warning(f"Scrape result for {link} is not successful. Skipping.")
+                continue
+            if self.store[link].scrape_result.content is None:
+                self.logger.warning(f"Scrape result for {link} has no content. Skipping.")
+                continue
+            content_dict[link] = self.store[link].scrape_result.content
         
-        # Get list of links to analyze
-        links_with_content = []
-        links_to_analyze = []
-        for record in self.store.values():
-            if record.scrape_result is not None and record.scrape_result.scrape_success:
-                links_with_content.append(record.link)
-                if overwrite or record.analysis_result is None:
-                    links_to_analyze.append(record.link)
-                    
-        self.logger.info(f"Analyzing {len(links_to_analyze)}/{len(links_with_content)} new or retry links with content...")
-        
-        # Analyze the content
-        content_dict = {link: self.store[link].scrape_result.content for link in links_to_analyze}
-        assert all([content is not None for content in content_dict.values()])
         # update the store
         analyses = {}
-        num_items = len(content_dict)
         try:
             for link, result in self.analyzer.analyze_multiple(content_dict):
                 self.store[link].analysis_result = result
@@ -338,6 +333,7 @@ class Workflow:
         # Print summary
         success_count = sum([1 for result in analyses.values() if result.analysis_success])
         self.logger.info(f"Successfully analyzed {success_count}/{len(content_dict)} links.")
+        
     def analyze(self, overwrite:bool=False) -> List[AnalysisResult]:
         """Analyze content for links that have been successfully scraped but not yet analyzed.
         
@@ -347,14 +343,23 @@ class Workflow:
         Returns:
             List[AnalysisResult]: List of AnalysisResult objects for each link.
         """
-        generator = self.analyze_generator(overwrite)
+                
+        # Get list of links to analyze
+        links_with_content = []
+        links_to_analyze = []
+        for record in self.store.values():
+            if record.scrape_result is not None and record.scrape_result.scrape_success:
+                links_with_content.append(record.link)
+                if overwrite or record.analysis_result is None:
+                    links_to_analyze.append(record.link)
+                    
+        self.logger.info(f"Analyzing {len(links_to_analyze)}/{len(links_with_content)} new or retry links with content...")
+        
+        generator = self.analyze_generator(links_to_analyze)
         results = []
-        for result in tqdm(generator):
+        for result in tqdm(generator, desc="Analyzing", unit="link", total=len(links_to_analyze)):
             results.append(result)
         return results
-        return results
-    
-    
     
     def get_analyses(self) -> pd.DataFrame:
         """Return a DataFrame copy of the stored analysis results."""

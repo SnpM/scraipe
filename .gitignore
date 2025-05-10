@@ -175,7 +175,6 @@ cython_debug/
 
 
 celebrities.csv
-.openai_key
 openai_key.txt
 *.session
 *.session

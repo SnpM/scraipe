@@ -59,7 +59,7 @@ class TestUpdateScrapes:
 
 class TestUpdateAnalyses:
     def test_update_analyses_dict(self, workflow):
-        result = AnalysisResult(analysis_success=True, output={"summary": "Dict analysis"})
+        result = AnalysisResult(analysis_success=True, output={"summry": "Dict analysis"})
         workflow.update_analyses({"http://example.com/dict_analysis": result})
         assert workflow.store["http://example.com/dict_analysis"].analysis_result.output["summary"] == "Dict analysis"
 
