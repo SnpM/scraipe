@@ -123,7 +123,7 @@ def test_image_message_live(live_scraper):
     assert result.content is not None
     
 
-@pytest.mark.skipif(os.environ.get("QR") is None, reason="QR is not set")    
+@pytest.mark.skipif(os.environ.get("QR") is None, reason="QR environment flag is not set")    
 def test_qrcode_login(request):
     skip_if_no_capture(request)
         
@@ -139,7 +139,7 @@ def test_qrcode_login(request):
     assert scrape_result.scrape_success
     
 @pytest.mark.asyncio
-@pytest.mark.skipif(os.environ.get("QR") is None, reason="QR is not set")
+@pytest.mark.skipif(os.environ.get("QR") is None, reason="QR environment flag is not set")
 async def test_qrcode_login_async(request):
     skip_if_no_capture(request)
         
