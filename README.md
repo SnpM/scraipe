@@ -14,6 +14,8 @@ Scraping and analysis framework. Under development.
 - **Customizable Ingress**: Easily define rules to dynamically route different links to their appropriate scrapers.
 - **Detailed Logging**: Monitor scraping and analysis operations through robust errors for improved debugging and transparency.
 
+Check out [the demo](https://scraipe.streamlit.app/).
+
 ## Help
 
 See [documentation](https://scraipe.readthedocs.io/en/latest/) for details.

@@ -178,6 +178,9 @@ celebrities.csv
 .openai_key
 openai_key.txt
 *.session
+*.session
+*.sesssion.txt
+*.session.txt.lock
 poetry.lock
 .vscode/*
 secrets.env
