@@ -71,33 +71,38 @@ class IAsyncExecutor:
     async def wait_for(self, future: FutureLike) -> Any:
         return await get_awaitable(future)
             
-    async def run_multiple_async(self, tasks: List[Awaitable[Any]], max_workers:int=10) -> AsyncGenerator[Tuple[Any, str], None]:
+    async def run_multiple_async(self, tasks: List[Awaitable[Any]], max_workers: int = 10, timeout:float = 10) -> AsyncGenerator[Tuple[Any, str], None]:
         """
         Run multiple coroutines in parallel using the underlying executor.
-        Limits the number of concurrent tasks to max_workers.
-        
+        Limits the number of concurrent tasks to max_workers and applies a timeout to each task.
+
         Args:
             tasks: A list of coroutines to run.
             max_workers: The maximum number of concurrent tasks.
+            timeout: The maximum time to wait for each individual task to complete in seconds.
+
         Yields:
             A tuple of (result, error) for each task.
         """
         assert max_workers > 0, "max_workers must be greater than 0"
         semaphore = asyncio.Semaphore(max_workers)
-        
+
         async def work(coro: Awaitable[Any], sem: asyncio.Semaphore) -> Tuple[Any, str]:
             async with sem:
                 try:
-                    return await self.async_run(coro),None
+                    return await asyncio.wait_for(self.async_run(coro), timeout=timeout), None
+                except asyncio.TimeoutError:
+                    logging.error(f"Task timed out after {timeout} seconds.")
+                    return None, f"Task timed out after {timeout}>{timeout} seconds."
                 except Exception as e:
                     logging.error(f"Task failed with exception: {e}")
                     return None, str(e)
-                
+
         coros = [work(task, semaphore) for task in tasks]
         for completed in asyncio.as_completed(coros):
             yield await completed
 
-    def run_multiple(self, tasks: List[Awaitable[Any]], max_workers:int=10) -> Generator[Tuple[Any,str], None, None]:
+    def run_multiple(self, tasks: List[Awaitable[Any]], max_workers:int=10, timeout=10) -> Generator[Tuple[Any,str], None, None]:
         """
         Run multiple coroutines in parallel using the underlying executor.
         Block calling thread and yield results as they complete.
@@ -105,6 +110,7 @@ class IAsyncExecutor:
         Args:
             tasks: A list of coroutines to run.
             max_workers: The maximum number of concurrent tasks.
+            timeout: The maximum time to wait for each individual task to complete in seconds.
             
         Yields:
             A tuple of (result, error) for each task.
@@ -113,7 +119,7 @@ class IAsyncExecutor:
         result_queue: Queue = Queue()
 
         async def producer() -> None:
-            async for result in self.run_multiple_async(tasks, max_workers=max_workers):
+            async for result in self.run_multiple_async(tasks, max_workers=max_workers, timeout=timeout):
                 result_queue.put(result)
             result_queue.put(DONE)
         

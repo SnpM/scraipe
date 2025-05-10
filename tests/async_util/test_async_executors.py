@@ -3,7 +3,7 @@ import asyncio
 from scraipe.async_util.async_executors import IAsyncExecutor, EventLoopPoolExecutor, DefaultBackgroundExecutor
 from asdftimer import AsdfTimer as Timer
 
-@pytest.fixture(params=[EventLoopPoolExecutor, DefaultBackgroundExecutor])
+@pytest.fixture(params=[DefaultBackgroundExecutor,EventLoopPoolExecutor])
 def executor(request):
     executor_instance = request.param()
     yield executor_instance
@@ -92,6 +92,20 @@ def test_run_multiple(executor):
     tasks = [async_task(i) for i in range(5)]
     results = [result for result,err in executor.run_multiple(tasks)]
     assert sorted(results) == sorted([i * 2 for i in range(5)])
+
+def test_run_multiple_timeout(executor:IAsyncExecutor):
+    async def async_task(x):
+        # This task should be interrupted and not wait 1000 seconds
+        await asyncio.sleep(1000)
+        return x * 2
+
+    tasks = [async_task(i) for i in range(5)]
+    results = list(executor.run_multiple(tasks, timeout=0.1))
+    
+    for result, error in results:
+        assert result is None
+        assert "timed out" in error
+        print("asdf")
 
 @pytest.mark.asyncio
 async def test_async_run_multiple(executor:IAsyncExecutor):
