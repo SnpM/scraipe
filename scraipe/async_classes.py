@@ -1,6 +1,6 @@
 from abc import abstractmethod
-from typing import Generator, Tuple
-from scraipe.classes import IScraper, ScrapeResult, IAnalyzer, AnalysisResult
+from typing import Generator, Tuple, List
+from scraipe.classes import IScraper, ScrapeResult, IAnalyzer, AnalysisResult, ILinkCollector
 from scraipe.async_util import AsyncManager
 import logging
 class IAsyncScraper(IScraper):
@@ -50,7 +50,7 @@ class IAsyncScraper(IScraper):
         Blocks while waiting for results.
         
         Args:
-            links (list): A list of URLs to scrape.
+            links (Iterable): A collection of URLs to scrape.
         
         Returns:
             Generator[Tuple[str, ScrapeResult], None, None]: A generator yielding tuples of URL and ScrapeResult.
@@ -134,3 +134,20 @@ class IAsyncAnalyzer(IAnalyzer):
                 logging.error(f"This is bad: {error}")
                 continue
             yield output
+
+class IAsyncLinkCollector(ILinkCollector):
+    """
+    Base class for asynchronous link providers. Implements the ILinkProvider interface.
+    This class provides a synchronous wrapper around the asynchronous link retrieval method.
+    Subclasses must implement the async_get_links() method.
+    """
+    
+    @abstractmethod
+    async def async_collect_links(self) -> List[str]:
+        """
+        Asynchronously retrieve links to scrape.
+        """
+        raise NotImplementedError("Subclasses must implement this method.")
+    
+    def collect_links(self):
+        return AsyncManager.get_executor().run(self.async_collect_links())

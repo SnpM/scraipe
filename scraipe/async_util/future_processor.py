@@ -27,7 +27,7 @@ class ResultHolder:
         return f"ResultHolder(success={self.success}, output={self.output}, exception={self.exception})"
         
 @final
-class FutureProcessor:
+class synFutureProcessor:
     """
     A class that uses a dedicated thread to process results from concurrent Futures.
 

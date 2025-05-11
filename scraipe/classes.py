@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import final, List, Dict, Generator, Tuple
+import collections.abc
+from typing import final, Iterable, Dict, Generator, Tuple, List
 import tqdm
 from pydantic import BaseModel, model_validator
 from re import Pattern
@@ -173,7 +174,7 @@ class IScraper(ABC):
         """
         raise NotImplementedError()
 
-    def scrape_multiple(self, links: List[str]) -> Generator[Tuple[str, ScrapeResult], None, None]:
+    def scrape_multiple(self, links: Iterable[str]) -> Generator[Tuple[str, ScrapeResult], None, None]:
         """Get content from multiple urls."""
         for link in links:
             result = self.scrape(link)
@@ -205,3 +206,21 @@ class IAnalyzer(ABC):
         for link, content in contents.items():
             result = self.analyze(content)
             yield link, result
+
+class ILinkCollector(ABC, collections.abc.Iterable[str]):
+    @abstractmethod
+    def collect_links(self) -> Iterable[str]:
+        """Fetches a list of links to scrape.
+        
+        Returns:
+            Iterable[str]: An iterable of URLs to scrape.
+        """
+        raise NotImplementedError()
+
+    def __iter__(self) -> Iterable[str]:
+        """Allows the link collector to be used as an iterable.
+        
+        Yields:
+            str: A link to scrape.
+        """
+        yield from self.collect_links()

@@ -1,5 +1,5 @@
-from typing import final, List, Dict, Generator
-from scraipe.classes import IScraper, IAnalyzer, ScrapeResult, AnalysisResult
+from typing import final, Sequence, Dict, Generator, List, Iterable
+from scraipe.classes import IScraper, IAnalyzer, ScrapeResult, AnalysisResult, ILinkCollector
 import pandas as pd
 from pydantic import BaseModel, ValidationError
 from tqdm.auto import tqdm
@@ -35,23 +35,28 @@ class Workflow:
             return str(self)
         
     
+    link_collector:ILinkCollector
     scraper:IScraper
     analyzer:IAnalyzer
     store:Dict[str, StoreRecord]
-    def __init__(self, scraper:IScraper, analyzer:IAnalyzer,
+    def __init__(self,
+        scraper:IScraper,
+        analyzer:IAnalyzer,
+        link_collector:ILinkCollector = None,
         logger:Logger = None):
+        self.link_collector = link_collector
         self.scraper = scraper
         self.analyzer = analyzer
         self.store = {}
         self.logger = logger if logger else logging.getLogger(__name__)
     
-    def scrape_generator(self, links:List[str]) -> Generator[ScrapeResult, None, None]:
+    def scrape__generator(self, links:Sequence[str]) -> Generator[ScrapeResult, None, None]:
         """Scrape content from the provided links.
         
         Removes duplicate links and filters out those already scraped (unless 'overwrite' is True).
         
         Args:
-            links (List[str]): List of URLs to scrape.
+            links (Sequence[str]): List of URLs to scrape.
             overwrite (bool): If True, re-scrape links already present in the store.
         """
         assert isinstance(self.scraper, IScraper), "Scraper must be an instance of IScraper"
@@ -79,25 +84,51 @@ class Workflow:
         success_count = sum(1 for result in scrapes.values() if result.scrape_success)
         self.logger.info(f"Successfully scraped {success_count}/{len(links)} links.")
     
-    def scrape(self, links:List[str], overwrite:bool=False) -> List[ScrapeResult]:
+    def collect_links(self):
+        """Collect links using the targeter and store them in the store."""
+        assert isinstance(self.link_collector, ILinkCollector), "Targeter must be an instance of ILinkCollector"
+        assert isinstance(self.store, dict), "Store must be a dictionary"
+        
+        links = self.link_collector.collect_links()
+        for link in tqdm(links, desc="Collecting links", unit="link"):
+            if link not in self.store:
+                self.store[link] = self.StoreRecord(link)
+        self.logger.info(f"Collected {len(links)} links.")
+    
+    def scrape(self, links:Iterable[str] = None, overwrite:bool=False) -> Sequence[ScrapeResult]:
         """Scrape content from the provided links and return a list of ScrapeResult objects.
         
         Args:
-            links (List[str]): List of URLs to scrape.
-            overwrite (bool): If True, re-scrape links already present in the store.
+            links (Iterable[str]): Collection of URLs to scrape. If None, targets links already collected in the store.
+            overwrite (bool): If True, re-scrape links that have already been successfully scraped.
             
         Returns:
-            List[ScrapeResult]: List of ScrapeResult objects for each link.
+            Sequence[ScrapeResult]: List of ScrapeResult objects for each link.
         """
+        
+        # if links is None, use existing links in the store
+        if links is None:
+            links = [record.link for record in self.store.values()]
+            if not links:
+                self.logger.warning("No links found in the store. Please configure the link collector and call collect_links() before scraping.")
+                return []
+        elif isinstance(links, Sequence):
+            # No need to collect from iterable
+            pass
+        elif isinstance(links, Iterable):
+            # Enumerate the iterable
+            links = list(links)
+            
+        assert all(isinstance(link, str) for link in links), "All links must be strings"
         
         # Remove duplicates
         links_to_scrape = list(set(links))
         
-        # Filter out the links that have already been succesfully scraped
+        # Filter out the links that have been succesfully scraped
         if not overwrite:
             links_to_scrape = [url for url in links if url not in self.store or self.store[url].scrape_result is None]
         
-        generator = self.scrape_generator(links_to_scrape)
+        generator = self.scrape__generator(links_to_scrape)
         results = []
         for result in tqdm(generator, desc="Scraping", unit="link", total=len(links_to_scrape)):
             results.append(result)
@@ -125,12 +156,12 @@ class Workflow:
         raise NotImplementedError(f"Cannot update scrapes with data of type {type(data)}")
     
     @update_scrapes.register(list)
-    def _(self, data:List[ScrapeResult]):
+    def _(self, data:Sequence[ScrapeResult]):
         """
         Update the store's ScrapeResults with a list of ScrapeResult objects.
         
         Args:
-            data (List[ScrapeResult]): List containing ScrapeResult instances.
+            data (Sequence[ScrapeResult]): List containing ScrapeResult instances.
         
         Side Effects:
             Updates the internal store with the provided scrape results.
@@ -200,7 +231,7 @@ class Workflow:
         self.update_scrapes(results)
         
     @singledispatchmethod
-    def update_analyses(self, data, output_cols:List[str]=None):
+    def update_analyses(self, data, output_cols:Sequence[str]=None):
         """
         Update analyses using different input data types.
         
@@ -233,7 +264,7 @@ class Workflow:
             self.logger.info(f"Updated analysis result for {link}.")
             
     @update_analyses.register(pd.DataFrame)
-    def _(self, data:pd.DataFrame, output_cols:List[str]):
+    def _(self, data:pd.DataFrame, output_cols:Sequence[str]):
         """
         Update the store's AnalysisResults from a pandas DataFrame.
         
@@ -295,7 +326,7 @@ class Workflow:
         self.store = {}
         self.logger.info("Flushed all records from the store.")
     
-    def analyze_generator(self, links:List[str]) -> Generator[AnalysisResult, None, None]:
+    def analyze__generator(self, links:Sequence[str]) -> Generator[AnalysisResult, None, None]:
         """Analyze content for links that have been successfully scraped but not yet analyzed.
         
         Args:
@@ -334,14 +365,14 @@ class Workflow:
         success_count = sum([1 for result in analyses.values() if result.analysis_success])
         self.logger.info(f"Successfully analyzed {success_count}/{len(content_dict)} links.")
         
-    def analyze(self, overwrite:bool=False) -> List[AnalysisResult]:
+    def analyze(self, overwrite:bool=False) -> Sequence[AnalysisResult]:
         """Analyze content for links that have been successfully scraped but not yet analyzed.
         
         Args:
             overwrite (bool): (Currently unused) Reserved for future re-analysis capabilities.
             
         Returns:
-            List[AnalysisResult]: List of AnalysisResult objects for each link.
+            Sequence[AnalysisResult]: List of AnalysisResult objects for each link.
         """
                 
         # Get list of links to analyze
@@ -355,7 +386,7 @@ class Workflow:
                     
         self.logger.info(f"Analyzing {len(links_to_analyze)}/{len(links_with_content)} new or retry links with content...")
         
-        generator = self.analyze_generator(links_to_analyze)
+        generator = self.analyze__generator(links_to_analyze)
         results = []
         for result in tqdm(generator, desc="Analyzing", unit="link", total=len(links_to_analyze)):
             results.append(result)
@@ -373,11 +404,11 @@ class Workflow:
                 rows.append(row)
         return pd.DataFrame(rows)
     
-    def update_records(self, records:List[StoreRecord]):
+    def update_records(self, records:Sequence[StoreRecord]):
         """Update records in the store.
         
         Args:
-            records (List[StoreRecord]): List of StoreRecord objects to replace the current store.
+            records (Sequence[StoreRecord]): List of StoreRecord objects to replace the current store.
         """
         # Assert input type
         assert isinstance(records, list)

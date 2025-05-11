@@ -157,3 +157,18 @@ class TestStoreOperations:
         export_df = workflow.export(verbose=True)
         expected_cols = {"link", "scrape_success", "scrape_error", "analysis_success", "analysis_error"}
         assert expected_cols.issubset(set(export_df.columns))
+
+class TestCollectAndScrape:
+    def test_collect_and_scrape(self, workflow):
+        # Mock the collect_links method to return predefined links
+        workflow.collect_links = lambda: ["http://example.com/valid/1", "http://example.com/valid/2"]
+        
+        # Collect links and scrape them
+        links = workflow.collect_links()
+        workflow.scrape(links)
+        
+        # Assert that the links are scraped successfully
+        assert len(workflow.store) == 2
+        for link in links:
+            assert workflow.store[link].scrape_result.scrape_success
+            assert workflow.store[link].scrape_result.content == "Mocked content"
