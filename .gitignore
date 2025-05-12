@@ -192,3 +192,5 @@ secrets.env
 
 # Prefix to ignore files
 ~.*
+
+*reddit_hiking.env
