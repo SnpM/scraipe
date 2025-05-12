@@ -92,7 +92,6 @@ class IAsyncExecutor:
 
         async def work(coro: Awaitable[Any], sem: asyncio.Semaphore) -> Tuple[Any, str]:
             async with sem:
-                print(f"Event loop of work: {id(get_running_loop())}")
                 try:
                     return await asyncio.wait_for(self.async_run(coro), timeout=timeout), None
                 except asyncio.TimeoutError:
@@ -164,10 +163,6 @@ class IAsyncExecutor:
         try:
             while True:
                 try:
-                    # print event loop of async_iterable
-                    print(f"Event loop of async_iterable: {get_running_loop()}")
-                    # print event loop of current thread
-                    print(f"Event loop of current thread: {get_running_loop()}")
                     item = self.run( agen.__anext__() )
                 except StopAsyncIteration:
                     break

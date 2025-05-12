@@ -89,11 +89,26 @@ class Workflow:
         assert isinstance(self.link_collector, ILinkCollector), "Targeter must be an instance of ILinkCollector"
         assert isinstance(self.store, dict), "Store must be a dictionary"
         
-        links = self.link_collector.collect_links()
-        for link in tqdm(links, desc="Collecting links", unit="link"):
+        links = []
+        links_gen = self.link_collector.collect_links()
+        for link in tqdm(links_gen, desc="Collecting links", unit="link"):
             if link not in self.store:
                 self.store[link] = self.StoreRecord(link)
+            links.append(link)
         self.logger.info(f"Collected {len(links)} links.")
+        
+    def get_links(self) -> pd.DataFrame:
+        """Return a DataFrame copy of the stored links."""
+        records = self.store.values()
+        rows = []
+        for record in records:
+            row = {"link": record.link}
+            if record.scrape_result is not None:
+                row.update(record.scrape_result.model_dump())
+            if record.analysis_result is not None:
+                row.update(record.analysis_result.model_dump())
+            rows.append(row)
+        return pd.DataFrame(rows)
     
     def scrape(self, links:Iterable[str] = None, overwrite:bool=False) -> Sequence[ScrapeResult]:
         """Scrape content from the provided links and return a list of ScrapeResult objects.

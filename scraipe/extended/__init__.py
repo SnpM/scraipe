@@ -7,7 +7,7 @@ Dependencies for this package can be installed using `pip install scraipe[extend
 _AVAILABLE = False
 try:
     # Validate extemded dependencies from pyproject.toml:
-    for pkg in ["telethon", "trafilatura"]:
+    for pkg in ["telethon", "trafilatura", "asyncpraw"]:
         __import__(pkg)
     _AVAILABLE = True
 except ImportError:
@@ -19,3 +19,5 @@ if _AVAILABLE:
     from scraipe.extended.telegram_news_scraper import TelegramNewsScraper
     from scraipe.extended.llm_analyzers import OpenAiAnalyzer
     from scraipe.extended.llm_analyzers import GeminiAnalyzer
+    from scraipe.extended.reddit_link_collector import RedditLinkCollector
+    from scraipe.extended.reddit_submission_scraper import RedditSubmissionScraper
