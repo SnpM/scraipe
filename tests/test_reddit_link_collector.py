@@ -6,8 +6,8 @@ import os
 import pytest_asyncio
 
 # fixture that loads credentials from the environment
-@pytest_asyncio.fixture
-async def live_reddit():
+@pytest.fixture
+def live_collector():
     """Load Reddit credentials from the environment."""
     client_id = os.environ.get("REDDIT_CLIENT_ID")
     client_secret = os.environ.get("REDDIT_CLIENT_SECRET")
@@ -16,47 +16,30 @@ async def live_reddit():
     if not all([client_id, client_secret]):
         pytest.skip("Live Reddit credentials are not set in the environment.")
     
-    reddit = Reddit(
+    return RedditLinkCollector(
         client_id=client_id,
         client_secret=client_secret,
-        user_agent=user_agent,
-    )
-    try:
-        yield reddit
-    finally:
-        # Close the Reddit client
-        await reddit.close()
-
-@pytest.mark.asyncio
-async def test_live_collect_links(live_reddit:Reddit):
-    """Test live link collection."""
-    
-    collector = RedditLinkCollector(
-        client=live_reddit,
         subreddits="python",
         limit=5,
         sorts="top"
     )
+        
+        
+@pytest.mark.asyncio
+async def test_live_collect_links(live_collector:RedditLinkCollector):
+    """Test live link collection."""
     
     links = set()
-    async for link in collector.async_collect_links():
+    async for link in live_collector.async_collect_links():
         print(link)
         links.add(link)
     
     assert len(links) == 5
     
-def test_live_collect_links_sync(live_reddit:Reddit):
-    """Test live link collection."""
-    
-    collector = RedditLinkCollector(
-        client=live_reddit,
-        subreddits="python",
-        limit=5,
-        sorts="top"
-    )
-    
+def test_live_collect_links_sync(live_collector:RedditLinkCollector):
+    """Test live link collection."""    
     links = set()
-    for link in collector.collect_links():
+    for link in live_collector.collect_links():
         print(link)
         links.add(link)
     

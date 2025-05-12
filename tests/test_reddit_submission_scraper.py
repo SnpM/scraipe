@@ -2,38 +2,31 @@ import os
 import pytest
 import pytest_asyncio
 from asyncpraw import Reddit
-from scraipe.extended.reddit_post_scraper import RedditPostScraper
+from scraipe.extended.reddit_submission_scraper import RedditSubmissionScraper
 from scraipe.classes import ScrapeResult
 
 @pytest_asyncio.fixture
-async def live_reddit():
+async def live_scraper():
     """Load Reddit credentials from the environment."""
     client_id = os.environ.get("REDDIT_CLIENT_ID")
     client_secret = os.environ.get("REDDIT_CLIENT_SECRET")
-    user_agent = "scraipe reddit integration test by u/PeterTigerr"
     
     if not all([client_id, client_secret]):
         pytest.skip("Live Reddit credentials are not set in the environment.")
     
-    reddit = Reddit(
+    scraper = RedditSubmissionScraper(
         client_id=client_id,
         client_secret=client_secret,
-        user_agent=user_agent,
-    )
-    try:
-        yield reddit
-    finally:
-        # Close the Reddit client
-        await reddit.close()
+        comment_inclusion='both')
+    yield scraper
 
 @pytest.mark.asyncio
-async def test_reddit_post_scraper(live_reddit: Reddit):
+async def test_reddit_post_scraper(live_scraper:RedditSubmissionScraper):
     # Test the RedditPostScraper on a real Reddit post.
     url = "https://www.reddit.com/r/test/comments/lb7prn/back_when_dinosaurs_existed_there_used_to_be/"
     # Instantiate the scraper with both comment content and metadata.
-    scraper = RedditPostScraper(client=live_reddit, comment_inclusion='both')
     
-    result: ScrapeResult = await scraper.async_scrape(url)
+    result: ScrapeResult = await live_scraper.async_scrape(url)
     
     print(result)
     
