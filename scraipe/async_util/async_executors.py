@@ -7,6 +7,7 @@ import time
 import asyncio
 from scraipe.async_util.common import get_running_loop, get_running_thread
 from scraipe.async_util.common import FutureLike, get_awaitable
+from typing import AsyncIterable, Iterable, TypeVar, Iterator
 
 import logging
 
@@ -62,7 +63,9 @@ class IAsyncExecutor:
         return result
     
     async def async_run(self, coro: Awaitable[Any]) -> Any:
-        future = self.submit(coro)
+        # submit the coroutine to current event loop
+        future = asyncio.create_task(coro)
+        
         # Assert that future is FutureLike
         assert isinstance(future, FutureLike), f"Expected {FutureLike}, got {type(future)}"
         awaitable = get_awaitable(future)
@@ -89,13 +92,17 @@ class IAsyncExecutor:
 
         async def work(coro: Awaitable[Any], sem: asyncio.Semaphore) -> Tuple[Any, str]:
             async with sem:
+                print(f"Event loop of work: {id(get_running_loop())}")
                 try:
                     return await asyncio.wait_for(self.async_run(coro), timeout=timeout), None
                 except asyncio.TimeoutError:
                     logging.error(f"Task timed out after {timeout} seconds.")
                     return None, f"Task timed out after {timeout}>{timeout} seconds."
                 except Exception as e:
-                    logging.error(f"Task failed with exception: {e}")
+                    # log stack trace
+                    from traceback import format_exc
+                    logging.error(format_exc())
+
                     return None, str(e)
 
         coros = [work(task, semaphore) for task in tasks]
@@ -115,29 +122,63 @@ class IAsyncExecutor:
         Yields:
             A tuple of (result, error) for each task.
         """
-        DONE = object()  # Sentinel value to indicate completion
-        result_queue: Queue = Queue()
+        # DONE = object()  # Sentinel value to indicate completion
+        # result_queue: Queue = Queue()
 
-        async def producer() -> None:
-            async for result in self.run_multiple_async(tasks, max_workers=max_workers, timeout=timeout):
-                result_queue.put(result)
-            result_queue.put(DONE)
+        # async def producer() -> None:
+        #     async for result in self.run_multiple_async(tasks, max_workers=max_workers, timeout=timeout):
+        #         result_queue.put(result)
+        #     result_queue.put(DONE)
         
-        self.submit(producer())
+        # self.submit(producer())
         
-        POLL_INTERVAL = 0.01  # seconds
-        done = False
-        while not done:
-            time.sleep(POLL_INTERVAL)
-            while not result_queue.empty():
-                result = result_queue.get()
-                if result is DONE:
-                    done = True
-                    break
-                yield result
+        # POLL_INTERVAL = 0.01  # seconds
+        # done = False
+        # while not done:
+        #     time.sleep(POLL_INTERVAL)
+        #     while not result_queue.empty():
+        #         result = result_queue.get()
+        #         if result is DONE:
+        #             done = True
+        #             break
+        #         yield result
+        
+        # Get async generator
+        async_iterable = self.run_multiple_async(tasks, max_workers=max_workers, timeout=timeout)
+        # get wrapped iterable
+        wrapped_iterable = self.wrap_async_iterable(async_iterable)
+        # Return on main loop
+        for result, error in wrapped_iterable:
+            yield result, error
     
     def shutdown(self, wait: bool = True) -> None:
-        pass    
+        pass
+    
+    
+    def wrap_async_iterable(self, async_iterable: AsyncIterable )-> Iterable:
+        """
+        Wraps an AsyncIterable into a sync Iterable by driving
+        async iterator with executors runs.
+        """
+        agen = async_iterable.__aiter__()
+        try:
+            while True:
+                try:
+                    # print event loop of async_iterable
+                    print(f"Event loop of async_iterable: {get_running_loop()}")
+                    # print event loop of current thread
+                    print(f"Event loop of current thread: {get_running_loop()}")
+                    item = self.run( agen.__anext__() )
+                except StopAsyncIteration:
+                    break
+                yield item
+        finally:
+            aclose = getattr(agen, "aclose", None)
+            if aclose:
+                try:
+                    self.run(aclose())
+                except Exception:
+                    pass
 
 @final
 class DefaultBackgroundExecutor(IAsyncExecutor):
